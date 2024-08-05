@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
 
-import 'firebase_auth_service.dart';
+import '../controller/user_controller.dart';
 import 'widget_common.dart';
 
 class MyLogin extends StatefulWidget {
-
   @override
   State<MyLogin> createState() => _MyLoginState();
 }
 
 class _MyLoginState extends State<MyLogin> {
-  MyFirebaseAuthService myFirebaseAuthService = MyFirebaseAuthService();
+  UserController userController = Get.find();
 
+  // TextField control
   var textControlEmail = TextEditingController();
   var textControlPassword = TextEditingController();
 
@@ -127,12 +128,12 @@ class _MyLoginState extends State<MyLogin> {
   // Thuc hien dang nhap
   void signIn(BuildContext context) async {
     String email = textControlEmail.text.toString().trim();
-    String password = textControlPassword.toString();
+    String password = textControlPassword.text.toString();
 
-    User? user = await myFirebaseAuthService.signInWithEmailAndPassword(email, password);
+    User? user = await userController.myFirebaseAuthService.signInWithEmailAndPassword(email, password);
 
-    if(user != null){
-      // Navigator.pushNamed(context, 'home');
+    if (user != null) {
+      Get.toNamed('/home');
       print("Login OK");
     } else {
       print('Error: ${user.toString()}');

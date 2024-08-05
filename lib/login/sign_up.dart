@@ -1,8 +1,8 @@
-import 'package:fire_base_app_chat/widget_common.dart';
+import 'package:fire_base_app_chat/controller/user_controller.dart';
+import 'package:fire_base_app_chat/login/widget_common.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import 'firebase_auth_service.dart';
+import 'package:get/get.dart';
 
 class MyRegister extends StatefulWidget {
   @override
@@ -10,8 +10,7 @@ class MyRegister extends StatefulWidget {
 }
 
 class _MyRegisterState extends State<MyRegister> {
-  // Cung cap phuong thuc su dung Firebase
-  MyFirebaseAuthService myFirebaseAuthService = MyFirebaseAuthService();
+  UserController userController = Get.find(); // GetxController
 
   // TextField control
   var textControlName = TextEditingController();
@@ -103,7 +102,8 @@ class _MyRegisterState extends State<MyRegister> {
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   TextButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, 'login');
+                      // Navigator.pushNamed(context, 'login');
+                      Get.toNamed('/login');
                     },
                     child: const Text(
                       'Login',
@@ -129,12 +129,13 @@ class _MyRegisterState extends State<MyRegister> {
     String email = textControlEmail.text.toString().trim();
     String password = textControlPassword.text.toString();
 
-    User? user = await myFirebaseAuthService.signUpWithEmailAndPassword(email, password);
+    User? user = await userController.myFirebaseAuthService.signUpWithEmailAndPassword(email, password);
 
     // Thong bao ket qua
     if (user != null) {
       print("Success created User");
-      Navigator.popAndPushNamed(context, 'login');
+      // Navigator.popAndPushNamed(context, 'login');
+      Get.toNamed('/login');
     } else {
       print('Some error happend in Register');
     }

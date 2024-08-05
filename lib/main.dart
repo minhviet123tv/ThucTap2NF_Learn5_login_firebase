@@ -1,73 +1,37 @@
-import 'package:fire_base_app_chat/firebase_auth_service.dart';
+import 'package:fire_base_app_chat/controller/all_controller_binding.dart';
 import 'package:flutter/material.dart';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:get/get.dart';
 
+import 'service/firebase_auth_service.dart';
 import 'firebase_options.dart';
-import 'login.dart';
-import 'register.dart';
-
-/*
-add hoac pub get:
-firebase_core: ^3.3.0
-firebase_analytics: ^11.2.1
-firebase_auth: ^5.1.3
- */
+import 'login/home_page.dart';
+import 'login/sign_in.dart';
+import 'login/sign_up.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized(); // Đảm bảo đã khởi tạo (cho firebase va ca Bindings)
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      initialRoute: 'login',
-      // Chuyen huong luon khi moi mo app
+    GetMaterialApp(
+      initialBinding: AllControllerBinding(),
+      initialRoute: '/login',
+      // Mo trang khi moi vao app
+      getPages: [
+        GetPage(name: '/home', page: () => HomePage()),
+        GetPage(name: '/login', page: () => MyLogin()),
+        GetPage(name: '/register', page: () => MyRegister())
+      ],
       home: SafeArea(
         child: HomePage(),
       ),
-      routes: {
-        'login': (context) => MyLogin(),
-        'register': (context) => MyRegister(),
-        'home': (context) => HomePage(),
-      },
-      onGenerateRoute: (settings) {},
+      debugShowCheckedModeBanner: false,
     ),
   );
-}
-
-class HomePage extends StatelessWidget {
-
-  MyFirebaseAuthService myFirebaseAuthService = MyFirebaseAuthService();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Home Page"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("Welcome to Home Page", style: TextStyle(fontSize: 30),),
-            const SizedBox(height: 10,),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  myFirebaseAuthService.signOut(); // sign out
-                  Navigator.pushNamed(context, 'login');
-                },
-                child: const Text("Logout"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
