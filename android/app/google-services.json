@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "831600802751",
+    "project_id": "authenticationapp-98add",
+    "storage_bucket": "authenticationapp-98add.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:831600802751:android:7c4a0e9f0aa93a2d8e3f0a",
+        "android_client_info": {
+          "package_name": "com.example.fire_base_app_chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPlOZ18Vk3kzEqCNg-quRAmttTDY6N_54"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
