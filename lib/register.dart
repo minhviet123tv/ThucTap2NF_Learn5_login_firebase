@@ -131,8 +131,6 @@ class _MyRegisterState extends State<MyRegister> {
 
     User? user = await myFirebaseAuthService.signUpWithEmailAndPassword(email, password);
 
-    print(user.toString());
-
     // Thong bao ket qua
     if (user != null) {
       print("Success created User");

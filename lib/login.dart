@@ -131,8 +131,6 @@ class _MyLoginState extends State<MyLogin> {
 
     User? user = await myFirebaseAuthService.signInWithEmailAndPassword(email, password);
 
-    print(user.toString());
-
     if(user != null){
       // Navigator.pushNamed(context, 'home');
       print("Login OK");
