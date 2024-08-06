@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 
-import '../controller/user_controller.dart';
+import '../lib/controller/user_controller.dart';
 import 'widget_common.dart';
 
 class MyLogin extends StatefulWidget {
@@ -62,30 +62,14 @@ class _MyLoginState extends State<MyLogin> {
                   const SizedBox(
                     height: 40,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: Color(0xff4c505b),
-                          fontSize: 27,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: const Color(0xff4c505b),
-                        child: IconButton(
-                          color: Colors.white,
-                          onPressed: () {
-                            // Thuc hien dang nhap
-                            signIn(context);
-                          },
-                          icon: const Icon(Icons.arrow_forward),
-                        ),
-                      ),
-                    ],
+
+                  // Button Sign In
+                  ElevatedButton(
+                      onPressed: () {
+                        // Thuc hien dang nhap
+                        signIn(context);
+                      },
+                      child: const Text("Sign In", style: TextStyle(fontSize: 20),)
                   ),
                   const SizedBox(
                     height: 40,
@@ -93,7 +77,8 @@ class _MyLoginState extends State<MyLogin> {
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, 'register');
+                        // Navigator.pushNamed(context, 'register');
+                        Get.toNamed('/register');
                       },
                       child: const Text(
                         'Sign Up',

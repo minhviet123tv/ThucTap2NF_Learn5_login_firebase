@@ -6,5 +6,4 @@ class AllControllerBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<UserController>(() => UserController(), fenix: true);
   }
-
 }

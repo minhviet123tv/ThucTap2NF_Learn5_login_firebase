@@ -1,4 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 // Tao class chua cac ham su dung Firebase
 
@@ -11,8 +14,15 @@ class MyFirebaseAuthService {
       // Method by Firebase auth
       UserCredential credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       return credential.user;
-    } catch (e) {
-      print('Sign Up Error:: ${e.toString()}');
+    } catch (signUpError) {
+
+      // Print Error
+      print('Sign Up Error:: ${signUpError.toString()}');
+
+      // Thong bao khi email da ton tai | Notify when email exists
+      if (signUpError.toString().contains("email-already-in-use")) {
+        Get.snackbar("Notify", "Email already in use!", backgroundColor: Colors.green[300]);
+      }
     }
 
     return null;
@@ -22,7 +32,11 @@ class MyFirebaseAuthService {
   Future<User?> signInWithEmailAndPassword(String email, String password) async {
     try {
       // if email password on firebase -> return user
-      UserCredential credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      // UserCredential credential = await _auth.signInWithEmailAndPassword(email: email, password: password,);
+      UserCredential credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       return credential.user;
     } catch (e) {
       print('Sign In Error:: ${e.toString()}');
@@ -31,7 +45,7 @@ class MyFirebaseAuthService {
     return null;
   }
 
-  //2. Sign out
+  //3. Sign out
   Future<void> signOut() async {
     try {
       await _auth.signOut();
