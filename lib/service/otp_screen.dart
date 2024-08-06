@@ -22,31 +22,43 @@ class _OtpScreenState extends State<OtpScreen> {
         title: const Text("OTP Screen"),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          TextFieldLoginRegister(
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextFieldLoginRegister(
               textControl: textOtp,
               maxLength: null,
               keyboardType: TextInputType.phone,
               hintText: "OTP",
               prefixIcon: const SizedBox(),
-              obscureText: false),
-          ElevatedButton(
-              onPressed: () {
-                otpConfirm();
-              },
-              child: const Text('Confirm OTP')),
-        ],
+              obscureText: false,
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  otpConfirm();
+                },
+                child: const Text('Confirm OTP')),
+          ],
+        ),
       ),
     );
   }
 
   void otpConfirm() async {
     try {
-      PhoneAuthCredential credential =
-          await PhoneAuthProvider.credential(verificationId: widget.verificationId, smsCode: textOtp.text.toString());
-      FirebaseAuth.instance.signInWithCredential(credential).then((value){
-        Navigator.pop(context);
+      // Xac thuc cua firebase
+      PhoneAuthCredential credential = await PhoneAuthProvider.credential(
+        verificationId: widget.verificationId,
+        smsCode: textOtp.text.toString(),
+      );
+
+      // Sau khi xac thuc thanh cong: Chuyen huong trang
+      FirebaseAuth.instance.signInWithCredential(credential).then((value) {
+        Get.toNamed('/home');
       });
     } catch (e) {
       print(e.toString());

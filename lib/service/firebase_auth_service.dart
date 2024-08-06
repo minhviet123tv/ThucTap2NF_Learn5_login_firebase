@@ -15,7 +15,6 @@ class MyFirebaseAuthService {
       UserCredential credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       return credential.user;
     } catch (signUpError) {
-
       // Print Error
       print('Sign Up Error:: ${signUpError.toString()}');
 
@@ -40,6 +39,17 @@ class MyFirebaseAuthService {
       return credential.user;
     } catch (e) {
       print('Sign In Error:: ${e.toString()}');
+
+      // Thong bao neu email chua dang ky
+      if (e.toString().contains('invalid-credential')) {
+        Get.snackbar("Notify", "Email not register 2!",
+            backgroundColor: Colors.green[300],
+            titleText: const Text("Notify", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),),
+            messageText: const Text(
+              "Email is not register!",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+            ));
+      }
     }
 
     return null;

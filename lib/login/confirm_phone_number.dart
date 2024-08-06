@@ -24,30 +24,33 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
         title: const Text("Verify Phone Number"),
         centerTitle: true,
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFieldLoginRegister(
-                textControl: textPhoneNumber,
-                maxLength: null,
-                keyboardType: TextInputType.phone,
-                hintText: "+840987654321",
-                prefixIcon: const SizedBox(),
-                obscureText: false,
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  phoneAuthentication();
-                },
-                child: const Text('Verify Phone Number'),
-              ),
-            ],
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                TextFieldLoginRegister(
+                  textControl: textPhoneNumber,
+                  maxLength: null,
+                  keyboardType: TextInputType.phone,
+                  hintText: "+840987654321",
+                  prefixIcon: const SizedBox(),
+                  obscureText: false,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    phoneAuthentication();
+                  },
+                  child: const Text('Verify Phone Number'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

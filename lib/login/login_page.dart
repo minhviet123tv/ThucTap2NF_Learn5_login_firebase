@@ -263,7 +263,8 @@ class _LoginPageState extends State<LoginPage> {
       if (user != null) {
 
         // Chuyen den trang xac thuc dien thoai
-        Get.to(()=> ConfirmPhoneNumber());
+        // Get.to(()=> ConfirmPhoneNumber());
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ConfirmPhoneNumber()));
 
       } else {
         print('Some error happend in Sign Up');
