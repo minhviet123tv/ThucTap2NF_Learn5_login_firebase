@@ -50,7 +50,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   onPressed: () {
                     userController.phoneAuthentication(userController.phoneNumber.toString().trim());
                   },
-                  child: const Text('Repeat OTP'),
+                  child: const Text('Resend OTP'),
                 ),
 
                 //2. Xác nhận mã OTP đã gửi về điện thoại
