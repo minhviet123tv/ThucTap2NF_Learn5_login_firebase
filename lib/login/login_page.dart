@@ -1,7 +1,6 @@
 import 'package:fire_base_app_chat/controller/user_controller.dart';
-import 'package:fire_base_app_chat/login/home_page.dart';
-import 'package:fire_base_app_chat/service/otp_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -9,7 +8,7 @@ import 'package:get/get.dart';
 import '../custom_widget/text_field_login_register.dart';
 import 'confirm_phone_number.dart';
 
-enum AuthMode { signup, login }
+enum LoginState { signup, login }
 
 class LoginPage extends StatefulWidget {
   @override
@@ -21,17 +20,22 @@ class _LoginPageState extends State<LoginPage> {
   UserController userController = Get.find();
 
   // TextField control
-  var textEmail = TextEditingController();
-  var textPassword = TextEditingController();
-  var textPasswordConfirm = TextEditingController();
+  TextEditingController textEmail = TextEditingController();
 
-  // Login or signup state
-  AuthMode _authMode = AuthMode.login;
+  // Enum Login or signup state
+  LoginState _loginState = LoginState.login;
+
+  @override
+  void initState() {
+    super.initState();
+    // Khởi tạo theo GetxController để đặt sẵn email sau khi đăng ký thành công
+    textEmail.text = userController.email.value;
+  }
 
   // Change AuthMode _authMode
-  void _switchAuthMode() {
+  void _switchLoginState() {
     setState(() {
-      _authMode == AuthMode.login ? _authMode = AuthMode.signup : _authMode = AuthMode.login;
+      _loginState == LoginState.login ? _loginState = LoginState.signup : _loginState = LoginState.login;
     });
   }
 
@@ -115,6 +119,9 @@ class _LoginPageState extends State<LoginPage> {
                 //1. Email
                 TextFieldLoginRegister(
                   textControl: textEmail,
+                  onChanged: (value) {
+                    userController.email.value = value;
+                  },
                   maxLength: null,
                   keyboardType: TextInputType.emailAddress,
                   hintText: 'Email',
@@ -127,7 +134,9 @@ class _LoginPageState extends State<LoginPage> {
 
                 //2. Password
                 TextFieldLoginRegister(
-                  textControl: textPassword,
+                  onChanged: (value) {
+                    userController.password.value = value;
+                  },
                   maxLength: null,
                   keyboardType: TextInputType.visiblePassword,
                   hintText: "Password",
@@ -139,9 +148,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 //3. Confirm password
-                if (_authMode == AuthMode.signup)
+                if (_loginState == LoginState.signup)
                   TextFieldLoginRegister(
-                    textControl: textPasswordConfirm,
+                    onChanged: (value) {
+                      userController.passwordConfirm.value = value;
+                    },
                     maxLength: null,
                     keyboardType: TextInputType.visiblePassword,
                     hintText: "Confirm Password",
@@ -155,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                 //4. Button login & signup
                 ElevatedButton(
                   onPressed: () {
-                    if (_authMode == AuthMode.login) {
+                    if (_loginState == LoginState.login) {
                       // Xử lý bấm LOGIN
                       signInAppChat(context);
                     } else {
@@ -170,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   child: Text(
-                    _authMode == AuthMode.login ? 'LOGIN' : 'SIGN UP',
+                    _loginState == LoginState.login ? 'LOGIN' : 'SIGN UP',
                     style: const TextStyle(color: Colors.white, fontFamily: "KlarnaText"),
                   ),
                 ),
@@ -181,10 +192,10 @@ class _LoginPageState extends State<LoginPage> {
                 //5. TextButton chuyển đổi trạng thái LOGIN hoặc SIGNUP
                 TextButton(
                   onPressed: () {
-                    _switchAuthMode();
+                    _switchLoginState();
                   },
                   child: Text(
-                    '${_authMode == AuthMode.login ? 'SIGNUP' : 'LOGIN'} PAGE',
+                    '${_loginState == LoginState.login ? 'SIGNUP' : 'LOGIN'} PAGE',
                     style: const TextStyle(
                       fontFamily: "KlarnaText",
                       color: Color(0xFF4201FF),
@@ -209,15 +220,16 @@ class _LoginPageState extends State<LoginPage> {
   //I. Sign In
   void signInAppChat(BuildContext context) async {
     //Kiểm tra cấu trúc Email nếu đúng
-    bool emailValid = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(textEmail.text);
+    bool emailValid =
+        RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(userController.email.value);
 
     // Sign In
-    if (emailValid && textPassword.text.length >= 6) {
-      String email = textEmail.text.toString().trim();
-      String password = textPassword.text.toString();
+    if (emailValid && userController.password.value.length >= 6) {
+      String email = userController.email.value.toString().trim();
+      String password = userController.password.value.toString();
 
       // Sign in with firebase method in GetxController
-      User? user = await userController.myFirebaseAuthService.signInWithEmailAndPassword(email, password);
+      User? user = await userController.signInWithEmailAndPassword(email, password);
 
       // Go to home page
       if (user != null) {
@@ -236,7 +248,7 @@ class _LoginPageState extends State<LoginPage> {
         notify += "Email not ok! ";
       }
 
-      if (textPassword.text.length < 6) {
+      if (userController.password.value.length < 6) {
         notify += "Password not ok! ";
       } else {
         notify += "Password ok!";
@@ -246,31 +258,31 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  //II. Logic: Sign Up
+  //II. Sign Up
   void signUpAppChat(BuildContext context) async {
     //Kiểm tra cấu trúc Email nếu đúng
-    bool emailValid = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(textEmail.text);
+    bool emailValid =
+        RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(userController.email.value);
 
     // Sign Up
-    if (emailValid && textPassword.text.length >= 6 && textPassword.text == textPasswordConfirm.text) {
-      String email = textEmail.text.toString().trim();
-      String password = textPassword.text.toString();
+    if (emailValid &&
+        userController.password.value.length >= 6 &&
+        userController.password.value == userController.passwordConfirm.value) {
+      String email = userController.email.value.toString().trim();
+      String password = userController.password.value.toString();
 
       // Sign Up with firebase method in GetxController
-      User? user = await userController.myFirebaseAuthService.signUpWithEmailAndPassword(email, password);
+      User? user = await userController.signUpWithEmailAndPassword(email, password);
 
       // Sau khi dang ky Email thanh cong
       if (user != null) {
-
         // Chuyen den trang xac thuc dien thoai
         // Get.to(()=> ConfirmPhoneNumber());
         Navigator.push(context, MaterialPageRoute(builder: (context) => ConfirmPhoneNumber()));
-
       } else {
         print('Some error happend in Sign Up');
         // There has been a Notify that Email exist in MyFirebaseAuthService class
       }
-
     } else {
       // Notify error
       String notify = "";
@@ -281,18 +293,17 @@ class _LoginPageState extends State<LoginPage> {
         notify += "Email not ok! ";
       }
 
-      if (textPassword.text.length < 6) {
+      if (userController.password.value.length < 6) {
         notify += "Password not ok! ";
       } else {
         notify += "Password ok! ";
       }
 
-      if (textPassword.text != textPasswordConfirm.text) {
+      if (userController.password.value != userController.passwordConfirm.value) {
         notify += "Password not same! ";
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(notify)));
     }
   }
-
 }

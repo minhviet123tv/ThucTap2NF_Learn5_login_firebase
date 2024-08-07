@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
               return Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    userController.myFirebaseAuthService.signOut(); // sign out
+                    userController.signOut(); // sign out
                     // Navigator.pushNamed(context, 'login');
                     Get.toNamed('/login');
                   },

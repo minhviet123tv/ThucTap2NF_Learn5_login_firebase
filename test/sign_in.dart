@@ -115,7 +115,7 @@ class _MyLoginState extends State<MyLogin> {
     String email = textControlEmail.text.toString().trim();
     String password = textControlPassword.text.toString();
 
-    User? user = await userController.myFirebaseAuthService.signInWithEmailAndPassword(email, password);
+    User? user = await userController.signInWithEmailAndPassword(email, password);
 
     if (user != null) {
       Get.toNamed('/home');

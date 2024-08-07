@@ -1,12 +1,10 @@
+import 'package:fire_base_app_chat/controller/user_controller.dart';
 import 'package:fire_base_app_chat/custom_widget/text_field_login_register.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../service/otp_screen.dart';
-
 class ConfirmPhoneNumber extends StatefulWidget {
-  ConfirmPhoneNumber({
+  const ConfirmPhoneNumber({
     super.key,
   });
 
@@ -15,7 +13,8 @@ class ConfirmPhoneNumber extends StatefulWidget {
 }
 
 class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
-  TextEditingController textPhoneNumber = TextEditingController();
+
+  UserController userController = Get.find();
 
   @override
   Widget build(BuildContext context) {
@@ -24,55 +23,41 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
         title: const Text("Verify Phone Number"),
         centerTitle: true,
       ),
-      body: GestureDetector(
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                TextFieldLoginRegister(
-                  textControl: textPhoneNumber,
-                  maxLength: null,
-                  keyboardType: TextInputType.phone,
-                  hintText: "+840987654321",
-                  prefixIcon: const SizedBox(),
-                  obscureText: false,
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    phoneAuthentication();
-                  },
-                  child: const Text('Verify Phone Number'),
-                ),
-              ],
+      body: GetBuilder<UserController>(builder: (controller) {
+        return GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  TextFieldLoginRegister(
+                    onChanged: (value) {
+                      userController.phoneNumber.value = value; // Cập nhật phone number trong GetxController
+                    },
+                    maxLength: null,
+                    keyboardType: TextInputType.phone,
+                    hintText: "+84987654321",
+                    prefixIcon: const SizedBox(),
+                    obscureText: false,
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      // Phương thức xác thực số điện thoại
+                      await userController.phoneAuthentication(userController.phoneNumber.value.toString().trim());
+                    },
+                    child: const Text('Verify Phone Number'),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  //III. Confirm phone number
-  void phoneAuthentication() async {
-
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      verificationCompleted: (PhoneAuthCredential credential) {
-        Get.snackbar("Notify", 'Confirm Phone Number Success!', backgroundColor: Colors.purpleAccent);
-      },
-      verificationFailed: (FirebaseAuthException exception) {},
-      codeSent: (String verificationId, int? resendtoken) {
-        // Chuyen huong khi co ma xac thuc
-        Get.to(() => OtpScreen(
-              verificationId: verificationId,
-            ));
-      },
-      codeAutoRetrievalTimeout: (String verificationid) {},
-      phoneNumber: textPhoneNumber.text.toString().trim(),
+        );
+      },),
     );
   }
 }

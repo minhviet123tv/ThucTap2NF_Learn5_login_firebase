@@ -4,15 +4,16 @@ import 'package:flutter/material.dart';
 //I. Wiget TextFeild tạo kiểu chung, nhập dữ liệu kiểu riêng khi khởi tạo
 class TextFieldLoginRegister extends StatelessWidget {
 
-  final TextEditingController textControl;
+  final TextEditingController? textControl;
   final int? maxLength;
   final TextInputType keyboardType;
   final String hintText;
-  final Widget prefixIcon;
-  final bool obscureText;
+  final Widget? prefixIcon;
+  final bool? obscureText;
+  final ValueChanged<String>? onChanged;
 
-  TextFieldLoginRegister({super.key, required this.textControl, required this.maxLength, required this.keyboardType , required this.hintText,
-    required this.prefixIcon,required this.obscureText});
+  TextFieldLoginRegister({super.key, this.textControl, this.maxLength, required this.keyboardType , required this.hintText,
+    this.prefixIcon, this.obscureText, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +26,8 @@ class TextFieldLoginRegister extends StatelessWidget {
       keyboardType: keyboardType,
       textAlign: TextAlign.start, //Căn vị trí chữ gợi ý và chữ gõ vào
       style: const TextStyle(color: Colors.black), //kiểu dáng chữ sẽ gõ vào
-      obscureText: obscureText, //Ẩn sau mỗi lần gõ (hay dùng cho password), phải đặt mặc định nếu null
-
+      obscureText: obscureText ?? false, //Ẩn sau mỗi lần gõ (hay dùng cho password), phải đặt mặc định nếu null
+      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.grey),

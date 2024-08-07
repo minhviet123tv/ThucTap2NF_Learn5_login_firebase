@@ -129,7 +129,7 @@ class _MyRegisterState extends State<MyRegister> {
     String email = textControlEmail.text.toString().trim();
     String password = textControlPassword.text.toString();
 
-    User? user = await userController.myFirebaseAuthService.signUpWithEmailAndPassword(email, password);
+    User? user = await userController.signUpWithEmailAndPassword(email, password);
 
     // Thong bao ket qua
     if (user != null) {
