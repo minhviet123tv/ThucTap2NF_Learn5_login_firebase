@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../login/confirm_phone_number.dart';
 import '../login/otp_screen.dart';
 
-enum LoadingPage { none, signin, signup, otp }
+enum LoadingPage { none, signin, signup, confirmPhone, confirmOtp }
 
 class UserController extends GetxController {
   static UserController get instance => Get.find();
@@ -86,7 +86,6 @@ class UserController extends GetxController {
 
   //2. Sign Up
   void signUpAppChat(BuildContext context, LoadingPage loadingPage) async {
-
     // Cập nhật trạng thái
     loadingPageState(loadingPage);
 
@@ -101,7 +100,7 @@ class UserController extends GetxController {
 
       // Sau khi xác đăng ký email và password thành công
       if (user != null) {
-        Get.to(() => const ConfirmPhoneNumber()); // Chuyển hướng đến trang ConfirmPhoneNumber
+        Get.to(() => ConfirmPhoneNumber()); // Chuyển hướng đến trang ConfirmPhoneNumber
       } else {
         print('Some error happend in Sign Up'); // Cũng đã có thông báo trong hàm của firebase
       }
@@ -183,7 +182,7 @@ class UserController extends GetxController {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             messageText: const Text(
-              "Email or password is false!",
+              "Email or password invalid!",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
             ));
       }
@@ -210,43 +209,53 @@ class UserController extends GetxController {
   }
 
   //4. Xác thực số điện thoại: Nếu số điện thoại có thật thì sẽ gửi mã OTP đến
-  Future<void> phoneAuthentication(String textPhoneNumber) async {
-    // Thực hiện phương thức verifyPhoneNumber
+  Future<void> phoneAuthentication(LoadingPage loadingPage) async {
+    //a. Cập nhật trạng thái loading
+    loadingPageState(loadingPage);
+
+    //b. Kiểm tra dữ liệu đưa vào
+    if (phoneNumber.value.isEmpty) {
+      Get.snackbar("Error", 'Please type phone number!', backgroundColor: Colors.green[300]);
+      loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
+      return;
+    }
+
+    //c. Thực hiện phương thức verifyPhoneNumber
     await firebaseAuth.verifyPhoneNumber(
       //1. Số điện thoại đã truyền vào
-      phoneNumber: textPhoneNumber,
+      phoneNumber: phoneNumber.value,
 
+      //2. Sau khi xác thực thành công
       verificationCompleted: (PhoneAuthCredential credential) async {
-        // Get.snackbar("Notify", 'Confirm Phone Number Success!', backgroundColor: Colors.purpleAccent);
-        // await firebaseAuth.signInWithCredential(credential); // Đăng nhập firebase sau khi xác thực
+        loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
         Get.to(() => OtpScreen());
+        print('state: ${loadingPage.toString()} 1'); // Kiểm tra trạng thái
       },
 
-      //2. Kết nối thành công: Số điện thoại đúng cấu trúc (mã quốc gia + số | Số điện thoại này có thể có thật hoặc không)
+      //3. Khi kết nối thành công: Số điện thoại đúng cấu trúc (mã quốc gia + số | Số điện thoại này có thể có thật hoặc không)
       codeSent: (String verificationId, int? resendToken) {
         this.verificationId.value = verificationId; // Cập nhật verificationId (mã của firebase) cho GetxController
-        // Hành động chuyển hướng khi có mã xác thực -> Đến trang nhập mã đã gửi về điện thoại
-        Get.to(() => OtpScreen());
+        Get.to(() => OtpScreen()); // Đến trang nhập mã đã gửi về điện thoại
+        loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
+        print('state: ${loadingPage.toString()} 2');
       },
 
-      //3. Mã verificationId của firebase thay đổi khi chờ quá thời gian -> Cập nhật
+      //4. Mã verificationId của firebase thay đổi khi chờ quá thời gian -> Cập nhật
       codeAutoRetrievalTimeout: (String verificationId) {
         this.verificationId.value = verificationId;
+        print('state: ${loadingPage.toString()} 3');
       },
 
-      //4. Khi xác thực số điện thoại không thành công (Sẽ có load webview của firebase để xử lý rồi lại trả lại màn hình)
+      //5. Khi xác thực số điện thoại không thành công (Sẽ có load webview của firebase để xử lý rồi lại trả lại màn hình)
       verificationFailed: (FirebaseAuthException exception) {
-        if (exception.code == 'invalid-phone-number') {
-          // Số điện thoại không đúng cấu trúc: mã quốc gia + số điện thoại
-          print('The provided phone number is not valid');
-          Get.snackbar("Error", "The provided phone number is not valid", backgroundColor: Colors.green[300]);
-        } else {
-          // Thông báo lỗi khác (ví dụ như thiết bị máy ảo không phải Pixel không dùng được)
-          print('Somethings went wrong. Please try again');
-          Get.snackbar("Error", "Somethings went wrong. Please try again.");
-        }
+        print('[Error] verify phone number:\n $exception');
+        Get.snackbar("Error", exception.toString());
+        print('state: ${loadingPage.toString()} 4 \n');
       },
     );
+
+    //d. Chuyển trạng thái loading page về không
+    loadingPageState(LoadingPage.none);
   }
 
   //5.1 Hàm xử lý xác nhận mã OTP

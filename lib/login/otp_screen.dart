@@ -9,7 +9,6 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-
   TextEditingController textConfirmOtp = TextEditingController(); // TextField control
 
   @override
@@ -23,35 +22,36 @@ class _OtpScreenState extends State<OtpScreen> {
         builder: (controller) {
           return Padding(
             padding: const EdgeInsets.all(16),
-            child: controller.loadingPage != LoadingPage.otp
-                ? Column(
-                    children: [
-                      TextFieldLoginRegister(
-                        textControl: textConfirmOtp,
-                        maxLength: null,
-                        keyboardType: TextInputType.phone,
-                        hintText: "OTP",
-                        prefixIcon: const SizedBox(),
-                        obscureText: false,
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          //1. Xác nhận lại số điện thoại: Gửi lại mã OTP, cập nhật lại verificationId (bên trong hàm)
-                          ElevatedButton(
-                            onPressed: () {
-                              controller.phoneAuthentication(controller.phoneNumber.toString().trim());
-                            },
-                            child: const Text('Resend OTP'),
-                          ),
+            child: Column(
+              children: [
+                TextFieldLoginRegister(
+                  textControl: textConfirmOtp,
+                  maxLength: null,
+                  keyboardType: TextInputType.phone,
+                  hintText: "OTP",
+                  prefixIcon: const SizedBox(),
+                  obscureText: false,
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    //1. Xác nhận lại số điện thoại: Gửi lại mã OTP (Có thể có cập nhật lại verificationId bên trong hàm)
+                    ElevatedButton(
+                      onPressed: () {
+                        controller.phoneAuthentication(LoadingPage.confirmPhone);
+                        print("Clicked Resend OTP");
+                      },
+                      child: const Text('Resend OTP'),
+                    ),
 
-                          //2. Xử lý xác nhận mã OTP đã gửi về điện thoại
-                          ElevatedButton(
+                    //2. Xử lý xác nhận mã OTP đã gửi về điện thoại
+                    controller.loadingPage != LoadingPage.confirmOtp
+                        ? ElevatedButton(
                             onPressed: () {
-                              controller.controlOTP(textConfirmOtp.text.toString().trim(), LoadingPage.otp);
+                              controller.controlOTP(textConfirmOtp.text.toString().trim(), LoadingPage.confirmOtp);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
@@ -60,22 +60,12 @@ class _OtpScreenState extends State<OtpScreen> {
                               'Confirm OTP',
                               style: TextStyle(color: Colors.white),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : const Center(
-                    child: Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        Text("Confirm OTP!")
-                      ],
-                    ),
-                  ),
+                          )
+                        : const SizedBox(width: 140, child: Center(child: CircularProgressIndicator())),
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),

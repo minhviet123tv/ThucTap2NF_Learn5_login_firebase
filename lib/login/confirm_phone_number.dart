@@ -3,18 +3,10 @@ import 'package:fire_base_app_chat/custom_widget/text_field_login_register.dart'
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class ConfirmPhoneNumber extends StatefulWidget {
-  const ConfirmPhoneNumber({
-    super.key,
-  });
+class ConfirmPhoneNumber extends StatelessWidget {
+  final UserController userController = Get.find();
 
-  @override
-  State<ConfirmPhoneNumber> createState() => _ConfirmPhoneNumberState();
-}
-
-class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
-
-  UserController userController = Get.find();
+  ConfirmPhoneNumber({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,44 +15,50 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
         title: const Text("Verify Phone Number"),
         centerTitle: true,
       ),
-      body: GetBuilder<UserController>(builder: (controller) {
-        return GestureDetector(
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  TextFieldLoginRegister(
-                    onChanged: (value) {
-                      userController.phoneNumber.value = value; // Cập nhật phone number trong GetxController
-                    },
-                    maxLength: null,
-                    keyboardType: TextInputType.phone,
-                    hintText: "+84987654321",
-                    prefixIcon: const SizedBox(),
-                    obscureText: false,
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Phương thức xác thực số điện thoại
-                      await userController.phoneAuthentication(userController.phoneNumber.value.toString().trim());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+      body: GetBuilder<UserController>(
+        builder: (controller) {
+          return GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    TextFieldLoginRegister(
+                      onChanged: (value) {
+                        userController.phoneNumber.value = value; // Cập nhật phone number trong GetxController
+                      },
+                      maxLength: null,
+                      keyboardType: TextInputType.phone,
+                      hintText: "+84987654321",
+                      prefixIcon: const SizedBox(),
+                      obscureText: false,
                     ),
-                    child: const Text('Verify Phone Number', style: TextStyle(color: Colors.white),),
-                  ),
-                ],
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    userController.loadingPage != LoadingPage.confirmPhone
+                        ? ElevatedButton(
+                            onPressed: () {
+                              userController.phoneAuthentication(LoadingPage.confirmPhone); // Xác thực số điện thoại
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                            ),
+                            child: const Text(
+                              'Verify Phone Number',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          )
+                        : const CircularProgressIndicator(),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },),
+          );
+        },
+      ),
     );
   }
 }
