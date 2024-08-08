@@ -1,11 +1,9 @@
 import 'package:fire_base_app_chat/controller/all_controller_binding.dart';
-import 'package:fire_base_app_chat/login/otp_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 
 import 'login/login_page.dart';
-import 'service/firebase_auth_service.dart';
 import 'firebase_options.dart';
 import 'login/home_page.dart';
 

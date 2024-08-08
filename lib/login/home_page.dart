@@ -34,8 +34,7 @@ class HomePage extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  userController.signOut(); // sign out
-                  Get.toNamed('/login');
+                  userController.signOut(); // Sign out
                 },
                 child: const Text("Logout"),
               ),

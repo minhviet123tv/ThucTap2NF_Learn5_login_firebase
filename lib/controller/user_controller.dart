@@ -5,15 +5,17 @@ import 'package:get/get.dart';
 import '../login/confirm_phone_number.dart';
 import '../login/otp_screen.dart';
 
-enum LoadingPage { none, signin, signup, confirmPhone, confirmOtp }
+/*
+ class GetxController thực hiện các dữ liệu và logic chung của app
+ */
 
 class UserController extends GetxController {
   static UserController get instance => Get.find();
 
   //I. Dữ liệu chung
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase
-  late Rx<User?> firebaseUser; // Tài khoản firebase
-  RxString verificationId = ''.obs; // id xác thực, sẽ có khi thực hiện xác nhận số điện thoại (Được gửi về từ firebase)
+  late Rx<User?> user; // Tài khoản firebase
+  RxString verificationId = ''.obs; // id xác thực phone number (Được gửi về từ firebase)
   LoadingPage loadingPage = LoadingPage.none; // Tình trạng loading cho page đang dùng
 
   // Dữ liệu đăng nhập, đăng ký
@@ -26,17 +28,17 @@ class UserController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    firebaseUser = Rx<User?>(firebaseAuth.currentUser); // Khai báo tài khoản user
+    user = Rx<User?>(firebaseAuth.currentUser); // Khai báo tài khoản user
   }
 
-  // Hàm cập nhật trạng thái cho enum LoadingPage
+  //III. Hàm trong App: Sign in, Sign up
+  //1. Hàm cập nhật trạng thái cho enum LoadingPage
   void loadingPageState(LoadingPage loadingPage) {
     this.loadingPage = loadingPage;
     update();
   }
 
-  //III. Hàm trong App: Sign in, Sign up
-  //1. Sign In
+  //2. Sign In
   Future<void> signInAppChat(BuildContext context, LoadingPage loadingPage) async {
     // Loading page state
     loadingPageState(LoadingPage.signin);
@@ -48,21 +50,19 @@ class UserController extends GetxController {
       return;
     }
 
-    //Kiểm tra cấu trúc Email nếu đúng
     bool emailValid = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email.value);
 
-    // Sign In, kiểm tra dữ liệu nhập vào
+    // Sign In, kiểm tra dữ liệu nhập vào (cấu trúc Email)
     if (emailValid && password.value.length >= 6) {
-      User? user = await signInWithEmailAndPassword(email.value, password.value); // Dùng signIn của firebase đã tạo
+      User? user = await signInWithEmailAndPassword(email.value, password.value); // Dùng hàm signIn của firebase (đã tạo)
 
       if (user != null) {
-        // Chuyển về home page nếu đăng nhập thành công
-        Get.toNamed('/home');
+        Get.toNamed('/home'); // Chuyển về home page nếu đăng nhập thành công
       } else {
         print('Error: ${user.toString()}'); // In lỗi nếu không đăng nhập được
       }
     } else {
-      // Thông báo cho dữ liệu nhập vào
+      // Thông báo các lỗi của dữ liệu nhập vào
       String notify = "";
 
       if (emailValid) {
@@ -84,7 +84,7 @@ class UserController extends GetxController {
     loadingPageState(LoadingPage.none);
   }
 
-  //2. Sign Up
+  //3. Sign Up
   void signUpAppChat(BuildContext context, LoadingPage loadingPage) async {
     // Cập nhật trạng thái
     loadingPageState(loadingPage);
@@ -185,6 +185,8 @@ class UserController extends GetxController {
               "Email or password invalid!",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
             ));
+      } else {
+        Get.snackbar('Notify', signInError.toString(), backgroundColor: Colors.green[300]);
       }
     }
 
@@ -192,23 +194,23 @@ class UserController extends GetxController {
     return null;
   }
 
-  //3. Thoát tài khoản firebase
+  //3. Thoát tài khoản firebase và xoá dữ liệu user ở controller
   Future<void> signOut() async {
     try {
       await firebaseAuth.signOut();
 
       // Clear các thông tin user đã lưu | Giữ email
-
       password.value = "";
       passwordConfirm.value = '';
       phoneNumber.value = '';
-    } catch (e) {
-      // print lỗi (không hiện trên màn hình UI)
-      print('Sign Out Error: ${e.toString()}');
+
+      Get.toNamed('/login'); // Chuyển hướng đến login
+    } catch (exception) {
+      print('Sign Out Error:\n ${exception.toString()}');
     }
   }
 
-  //4. Xác thực số điện thoại: Nếu số điện thoại có thật thì sẽ gửi mã OTP đến
+  //4. Xác thực số điện thoại: Nếu số điện thoại có thật thì sẽ gửi mã OTP về
   Future<void> phoneAuthentication(LoadingPage loadingPage) async {
     //a. Cập nhật trạng thái loading
     loadingPageState(loadingPage);
@@ -227,30 +229,24 @@ class UserController extends GetxController {
 
       //2. Sau khi xác thực thành công
       verificationCompleted: (PhoneAuthCredential credential) async {
-        loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
-        Get.to(() => OtpScreen());
-        print('state: ${loadingPage.toString()} 1'); // Kiểm tra trạng thái
+        Get.to(() => OtpScreen()); // Chuyển đến trang xác nhận mã OTP đã gửi về điện thoại
       },
 
-      //3. Khi kết nối thành công: Số điện thoại đúng cấu trúc (mã quốc gia + số | Số điện thoại này có thể có thật hoặc không)
+      //3. Khi kết nối thành công, số điện thoại đúng cấu trúc: mã quốc gia + số | Số điện thoại này có thể có thật hoặc không
       codeSent: (String verificationId, int? resendToken) {
         this.verificationId.value = verificationId; // Cập nhật verificationId (mã của firebase) cho GetxController
         Get.to(() => OtpScreen()); // Đến trang nhập mã đã gửi về điện thoại
-        loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
-        print('state: ${loadingPage.toString()} 2');
       },
 
       //4. Mã verificationId của firebase thay đổi khi chờ quá thời gian -> Cập nhật
       codeAutoRetrievalTimeout: (String verificationId) {
         this.verificationId.value = verificationId;
-        print('state: ${loadingPage.toString()} 3');
       },
 
       //5. Khi xác thực số điện thoại không thành công (Sẽ có load webview của firebase để xử lý rồi lại trả lại màn hình)
       verificationFailed: (FirebaseAuthException exception) {
         print('[Error] verify phone number:\n $exception');
         Get.snackbar("Error", exception.toString());
-        print('state: ${loadingPage.toString()} 4 \n');
       },
     );
 
@@ -289,8 +285,7 @@ class UserController extends GetxController {
         smsCode: textOtp,
       );
 
-      // Thực hiện xác thực bằng cách đăng nhập vào firebase với 2 dữ liệu
-      // (mã trong firebase và mã OTP đã gửi về | gần giống dạng id và mật khẩu)
+      // Thực hiện xác thực bằng cách đăng nhập vào firebase (gần giống dạng id và mật khẩu)
       // (Có thể tạo .then(value){Get.toNamed('/login');}; để chuyển hướng sau khi xác thực thành công)
       UserCredential credential = await firebaseAuth.signInWithCredential(phoneAuthCredential);
 
@@ -304,3 +299,6 @@ class UserController extends GetxController {
     return false;
   }
 }
+
+// enum quản lý trạng thái loading trang
+enum LoadingPage {none, signin, signup, confirmPhone, confirmOtp}

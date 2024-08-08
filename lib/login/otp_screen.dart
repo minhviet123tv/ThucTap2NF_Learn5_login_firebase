@@ -38,19 +38,19 @@ class _OtpScreenState extends State<OtpScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    //1. Xác nhận lại số điện thoại: Gửi lại mã OTP (Có thể có cập nhật lại verificationId bên trong hàm)
                     ElevatedButton(
                       onPressed: () {
+                        //1. Gửi lại mã OTP (Xác nhận lại số điện thoại)
                         controller.phoneAuthentication(LoadingPage.confirmPhone);
                         print("Clicked Resend OTP");
                       },
                       child: const Text('Resend OTP'),
                     ),
 
-                    //2. Xử lý xác nhận mã OTP đã gửi về điện thoại
                     controller.loadingPage != LoadingPage.confirmOtp
                         ? ElevatedButton(
                             onPressed: () {
+                              //2. Xử lý xác nhận mã OTP đã gửi về điện thoại
                               controller.controlOTP(textConfirmOtp.text.toString().trim(), LoadingPage.confirmOtp);
                             },
                             style: ElevatedButton.styleFrom(
