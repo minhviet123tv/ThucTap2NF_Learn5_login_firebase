@@ -1,5 +1,5 @@
 import 'package:fire_base_app_chat/controller/all_controller_binding.dart';
-import 'package:fire_base_app_chat/service/otp_screen.dart';
+import 'package:fire_base_app_chat/login/otp_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
@@ -19,14 +19,13 @@ void main() async {
   runApp(
     GetMaterialApp(
       initialBinding: AllControllerBinding(),
-      // Mo trang khi moi vao app
-      // initialRoute: '/login',
       getPages: [
         GetPage(name: '/login', page: () => LoginPage()),
         GetPage(name: '/home', page: () => HomePage()),
       ],
       home: SafeArea(
-        child: LoginPage(), // Dat HomePage se bi loi Get.argument (Khi co nhieu argument) do Flutter se tai luon phan child
+        // Đặt HomePage sẽ bị lỗi Get.argument (Khi gửi nhiều argument) do Flutter sẽ tải luôn phần child
+        child: LoginPage(),
       ),
       debugShowCheckedModeBanner: false,
     ),

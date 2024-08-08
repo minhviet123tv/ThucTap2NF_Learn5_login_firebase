@@ -50,7 +50,10 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
                       // Phương thức xác thực số điện thoại
                       await userController.phoneAuthentication(userController.phoneNumber.value.toString().trim());
                     },
-                    child: const Text('Verify Phone Number'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                    ),
+                    child: const Text('Verify Phone Number', style: TextStyle(color: Colors.white),),
                   ),
                 ],
               ),

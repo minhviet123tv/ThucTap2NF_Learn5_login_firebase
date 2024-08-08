@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class HomePage extends StatelessWidget {
-  // Can put 1 lan dau tien
-  UserController userController = Get.put(UserController());
+
+  UserController userController = Get.find(); // GetxController
 
   @override
   Widget build(BuildContext context) {
@@ -21,31 +21,25 @@ class HomePage extends StatelessWidget {
               style: TextStyle(fontSize: 30),
             ),
             Text(
-              Get.arguments['email'],
+              userController.email.value,
               style: const TextStyle(fontSize: 25),
             ),
-
             Text(
-              Get.arguments['password'],
+              userController.password.value,
               style: const TextStyle(fontSize: 25),
             ),
-
             const SizedBox(
               height: 10,
             ),
-
-            GetBuilder<UserController>(builder: (controller) {
-              return Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    userController.signOut(); // sign out
-                    // Navigator.pushNamed(context, 'login');
-                    Get.toNamed('/login');
-                  },
-                  child: const Text("Logout"),
-                ),
-              );
-            },),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  userController.signOut(); // sign out
+                  Get.toNamed('/login');
+                },
+                child: const Text("Logout"),
+              ),
+            ),
           ],
         ),
       ),
