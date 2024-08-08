@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 import '../custom_widget/text_field_login_register.dart';
 
-enum LoginState { signup, login }
+enum UIState {signup, login}
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,7 +14,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   UserController userController = Get.find(); // Getx controller
   TextEditingController textEmail = TextEditingController(); // TextField control
-  LoginState _loginState = LoginState.login; // Enum Login or signup state
+  late UIState _uiState = UIState.login; // Enum Login or signup state
 
   @override
   void initState() {
@@ -23,10 +23,10 @@ class _LoginPageState extends State<LoginPage> {
     textEmail.text = userController.email.value;
   }
 
-  // Change switch Login UI State
+  // Change switch UI State
   void _switchLoginState() {
     setState(() {
-      _loginState == LoginState.login ? _loginState = LoginState.signup : _loginState = LoginState.login;
+      _uiState == UIState.login ? _uiState = UIState.signup : _uiState = UIState.login;
     });
   }
 
@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextFieldLoginRegister(
                       textControl: textEmail,
                       onChanged: (value) {
-                        userController.email.value = value;
+                        userController.email.value = value; // Cập nhật giá trị
                       },
                       maxLength: null,
                       keyboardType: TextInputType.emailAddress,
@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                     //2. Password
                     TextFieldLoginRegister(
                       onChanged: (value) {
-                        userController.password.value = value;
+                        userController.password.value = value; // Cập nhật giá trị
                       },
                       maxLength: null,
                       keyboardType: TextInputType.visiblePassword,
@@ -137,10 +137,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
 
                     //3. Confirm password
-                    if (_loginState == LoginState.signup)
+                    if (_uiState == UIState.signup)
                       TextFieldLoginRegister(
                         onChanged: (value) {
-                          userController.passwordConfirm.value = value;
+                          userController.passwordConfirm.value = value; // Cập nhật giá trị
                         },
                         maxLength: null,
                         keyboardType: TextInputType.visiblePassword,
@@ -152,11 +152,11 @@ class _LoginPageState extends State<LoginPage> {
                       height: 10,
                     ),
 
-                    //4. Button login & signup
+                    //4. Button login & signup (Ghép nút)
                     (userController.loadingPage != LoadingPage.signin && userController.loadingPage != LoadingPage.signup)
                         ? ElevatedButton(
                             onPressed: () {
-                              if (_loginState == LoginState.login) {
+                              if (_uiState == UIState.login) {
                                 // Xử lý bấm LOGIN
                                 userController.signInAppChat(context, LoadingPage.signin);
                               } else {
@@ -171,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             child: Text(
-                              _loginState == LoginState.login ? 'LOGIN' : 'SIGN UP',
+                              _uiState == UIState.login ? 'LOGIN' : 'SIGN UP',
                               style: const TextStyle(color: Colors.white, fontFamily: "KlarnaText"),
                             ),
                           )
@@ -180,13 +180,13 @@ class _LoginPageState extends State<LoginPage> {
                       height: 10,
                     ),
 
-                    //5. TextButton chuyển đổi trạng thái LOGIN hoặc SIGNUP
+                    //5. Chuyển đổi UI sang LOGIN hoặc SIGNUP
                     TextButton(
                       onPressed: () {
-                        _switchLoginState();
+                        _switchLoginState(); // Cập nhật giao diện
                       },
                       child: Text(
-                        '${_loginState == LoginState.login ? 'SIGNUP' : 'LOGIN'} PAGE',
+                        '${_uiState == UIState.login ? 'SIGNUP' : 'LOGIN'} PAGE',
                         style: const TextStyle(
                           fontFamily: "KlarnaText",
                           color: Color(0xFF4201FF),

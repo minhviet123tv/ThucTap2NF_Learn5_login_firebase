@@ -3,14 +3,9 @@ import 'package:fire_base_app_chat/custom_widget/text_field_login_register.dart'
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class OtpScreen extends StatefulWidget {
-  @override
-  State<OtpScreen> createState() => _OtpScreenState();
-}
-
-class _OtpScreenState extends State<OtpScreen> {
-  TextEditingController textConfirmOtp = TextEditingController(); // TextField control
-
+class OtpScreen extends StatelessWidget {
+  TextEditingController textConfirmOtp = TextEditingController();
+ // TextField control
   @override
   Widget build(BuildContext context) {
     return Scaffold(
