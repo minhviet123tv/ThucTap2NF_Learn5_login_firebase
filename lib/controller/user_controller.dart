@@ -23,6 +23,8 @@ class UserController extends GetxController {
   final RxString password = ''.obs;
   final RxString passwordConfirm = ''.obs;
   final RxString phoneNumber = ''.obs; // Dùng RxString vì định dạng là kiểu +84123456789
+  final RxString countryCode = ''.obs;
+  final RxString countryCodeAndPhoneNumber = ''.obs;
 
   //II. onReady: Thực hiện sau khi cài đặt xong GetxController
   @override
@@ -41,7 +43,7 @@ class UserController extends GetxController {
   //2. Sign In
   Future<void> signInAppChat(BuildContext context, LoadingPage loadingPage) async {
     // Loading page state
-    loadingPageState(LoadingPage.signin);
+    loadingPageState(loadingPage);
 
     // Kiểm tra trống dữ liệu
     if (email.value.isEmpty || password.value.isEmpty) {
@@ -121,7 +123,7 @@ class UserController extends GetxController {
       }
 
       if (password.value != passwordConfirm.value) {
-        notify += "Password not same! ";
+        notify += "PasswordConfirm not same! ";
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(notify)));
@@ -129,6 +131,11 @@ class UserController extends GetxController {
 
     // Cập nhật trạng thái -> load xong
     loadingPageState(LoadingPage.none);
+  }
+
+  //4. Get phoneNumber and countryCode
+  void getPhoneNumberAndContryCode (){
+    countryCodeAndPhoneNumber.value = '${countryCode.value}${phoneNumber.value}';
   }
 
   //III. Các hàm firebase: Hàm đăng ký, đăng nhập firebase, ...
@@ -202,7 +209,7 @@ class UserController extends GetxController {
       // Clear các thông tin user đã lưu | Giữ email
       password.value = "";
       passwordConfirm.value = '';
-      phoneNumber.value = '';
+      countryCodeAndPhoneNumber.value = '';
 
       Get.toNamed('/login'); // Chuyển hướng đến login
     } catch (exception) {
@@ -216,26 +223,39 @@ class UserController extends GetxController {
     loadingPageState(loadingPage);
 
     //b. Kiểm tra dữ liệu đưa vào
-    if (phoneNumber.value.isEmpty) {
+    if (phoneNumber.value.isEmpty || countryCode.value.isEmpty) {
       Get.snackbar("Error", 'Please type phone number!', backgroundColor: Colors.green[300]);
       loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
       return;
     }
 
+    // Lấy số điện thoại đầy đủ
+    getPhoneNumberAndContryCode();
+
     //c. Thực hiện phương thức verifyPhoneNumber
     await firebaseAuth.verifyPhoneNumber(
-      //1. Số điện thoại đã truyền vào
-      phoneNumber: phoneNumber.value,
+      //1. Số điện thoại đầy đủ gồm cả mã quốc gia + số điện thoại
+      phoneNumber: countryCodeAndPhoneNumber.value,
 
-      //2. Sau khi xác thực thành công
+      //2. Hành động sau khi xác minh hoàn tất | (Đã thử dùng nhưng chưa thấy run được lệnh nào)
       verificationCompleted: (PhoneAuthCredential credential) async {
-        Get.to(() => OtpScreen()); // Chuyển đến trang xác nhận mã OTP đã gửi về điện thoại
+        print("Verification Completed \ncredential: \n$credential");
       },
 
-      //3. Khi kết nối thành công, số điện thoại đúng cấu trúc: mã quốc gia + số | Số điện thoại này có thể có thật hoặc không
+      //3. Khi xác minh và kết nối thành công -> Có mã gửi về điện thoại
+      // (số điện thoại đúng cấu trúc: mã quốc gia + số | Số điện thoại này có thể có thật hoặc không)
       codeSent: (String verificationId, int? resendToken) {
-        this.verificationId.value = verificationId; // Cập nhật verificationId (mã của firebase) cho GetxController
-        Get.to(() => OtpScreen()); // Đến trang nhập mã đã gửi về điện thoại
+        this.verificationId.value = verificationId; // Cập nhật verificationId (mã của firebase)
+
+        // Khi dùng trạng thái cho trang là xác nhận số điện thoại và gửi mã
+        if(loadingPage == LoadingPage.confirmPhone) {
+          Get.to(() => OtpScreen()); // Đến trang nhập mã OTP
+        }
+
+        // Khi dùng trạng thái chỉ gửi lại mã
+        if(loadingPage == LoadingPage.resendOtp){
+          Get.snackbar("Notify", "Resend OTP successfully", backgroundColor: Colors.green[300]); // Thông báo đã gửi lại mã
+        }
       },
 
       //4. Mã verificationId của firebase thay đổi khi chờ quá thời gian -> Cập nhật
@@ -255,14 +275,14 @@ class UserController extends GetxController {
   }
 
   //5.1 Hàm xử lý xác nhận mã OTP
-  Future<void> controlOTP(String textConfirmOtp, LoadingPage loadingState) async {
-    // Cập nhật trạng thái load page
-    loadingPageState(loadingState);
+  Future<void> controlOTP(String textConfirmOtp) async {
+    //I. Cập nhật trạng thái load page
+    loadingPageState(LoadingPage.confirmOtp);
 
-    // Thực hiện xác thực mã otp và nhận về kết quả xác thực
+    //II. Thực hiện xác thực mã otp và nhận về kết quả xác thực
     bool otpSuccess = await verifyOTP(verificationId.value, textConfirmOtp);
 
-    // Hành động khi xác nhận thành công: Thông báo, chuyển về màn login
+    //III. Hành động khi xác nhận thành công: Thông báo, chuyển về màn login | Có thể lưu số đã xác thực cho user
     if (otpSuccess) {
       Get.snackbar("Notify", "Register success!", backgroundColor: Colors.green[300]);
       Get.toNamed('/login'); // arguments: {'email': userController.email.value,}
@@ -271,7 +291,7 @@ class UserController extends GetxController {
       Get.snackbar("Error", "OTP invalid", backgroundColor: Colors.green[300]);
     }
 
-    // Cập nhật trạng thái load page
+    //IV. Cập nhật trạng thái load page
     loadingPageState(LoadingPage.none);
   }
 
@@ -301,4 +321,4 @@ class UserController extends GetxController {
 }
 
 // enum quản lý trạng thái loading trang
-enum LoadingPage {none, signin, signup, confirmPhone, confirmOtp}
+enum LoadingPage { none, signin, signup, confirmPhone, confirmOtp, resendOtp }

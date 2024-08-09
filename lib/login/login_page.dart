@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../custom_widget/text_field_login_register.dart';
+import 'confirm_phone_number.dart';
 
-enum UIState {signup, login}
+enum UIState { signup, login }
 
 class LoginPage extends StatefulWidget {
   @override
@@ -19,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo theo GetxController để đặt sẵn email sau khi đăng ký thành công
+    // Khởi tạo theo GetxController để đặt sẵn text email sau khi đăng ký thành công
     textEmail.text = userController.email.value;
   }
 
@@ -84,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
                     spreadRadius: 1,
                     blurRadius: 10,
                     offset: Offset(0, 3), //x và y
-                  )
+                  ),
                 ],
               ),
               transform: Matrix4.rotationZ(-0.11),
@@ -99,9 +100,20 @@ class _LoginPageState extends State<LoginPage> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
               margin: const EdgeInsets.symmetric(horizontal: 40),
-              decoration: const BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(20)), color: Colors.white),
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    spreadRadius: 1,
+                    blurRadius: 10,
+                    offset: Offset(0, 3), //x và y
+                  ),
+                ],
+              ),
 
-              //Dùng Form để có các tính năng trao đổi với server như: autovalidateMode
+              // Dùng Form để có các tính năng trao đổi với server như: autovalidateMode
               child: Form(
                 child: Column(
                   children: [
@@ -121,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                       height: 10,
                     ),
 
-                    //2. Password
+                    //2. TextField password
                     TextFieldLoginRegister(
                       onChanged: (value) {
                         userController.password.value = value; // Cập nhật giá trị
@@ -136,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                       height: 10,
                     ),
 
-                    //3. Confirm password
+                    //3. TextField confirm password
                     if (_uiState == UIState.signup)
                       TextFieldLoginRegister(
                         onChanged: (value) {
@@ -179,6 +191,12 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 10,
                     ),
+
+                    // Nút tạm để code
+                    // ElevatedButton(
+                    //   onPressed: () => Get.to(() => const ConfirmPhoneNumber()),
+                    //   child: const Text("Open confirm phone number"),
+                    // ),
 
                     //5. Chuyển đổi UI sang LOGIN hoặc SIGNUP
                     TextButton(

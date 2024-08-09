@@ -12,34 +12,37 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Home Page"),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Welcome to Home Page",
-              style: TextStyle(fontSize: 30),
-            ),
-            Text(
-              userController.email.value,
-              style: const TextStyle(fontSize: 25),
-            ),
-            Text(
-              userController.password.value,
-              style: const TextStyle(fontSize: 25),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  userController.signOut(); // Sign out
-                },
-                child: const Text("Logout"),
+      body: Container(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Welcome to Home Page",
+                style: TextStyle(fontSize: 30),
               ),
-            ),
-          ],
+              Text(
+                userController.email.value,
+                style: const TextStyle(fontSize: 25),
+              ),
+              Text(
+                userController.password.value,
+                style: const TextStyle(fontSize: 25),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    userController.signOut(); // Sign out
+                  },
+                  child: const Text("Logout"),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

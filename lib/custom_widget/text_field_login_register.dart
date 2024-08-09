@@ -27,7 +27,7 @@ class TextFieldLoginRegister extends StatelessWidget {
       textAlign: TextAlign.start, //Căn vị trí chữ gợi ý và chữ gõ vào
       style: const TextStyle(color: Colors.black), //kiểu dáng chữ sẽ gõ vào
       obscureText: obscureText ?? false, //Ẩn sau mỗi lần gõ (hay dùng cho password), phải đặt mặc định nếu null
-      onChanged: onChanged,
+      onChanged: onChanged, // Hàm thực hiện khi có thay đổi text nhập vào
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.grey),

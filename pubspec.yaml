@@ -39,7 +39,7 @@ dependencies:
   firebase_analytics: ^11.2.1 # Cài đặt firebase 2
   firebase_auth: ^5.1.3 # Dịch vụ xác thực của firebase (email, phone number ...)
   get: ^4.6.6
-  pinput: ^5.0.0 # TextField chuyên nhập mã OTP
+  flutter_otp_text_field: ^1.1.3+2 # TextField chuyên nhập mã OTP
 
 dev_dependencies:
   flutter_test:
