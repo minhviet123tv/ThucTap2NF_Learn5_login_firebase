@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../custom_widget/text_field_login_register.dart';
-import 'confirm_phone_number.dart';
 
 enum UIState { signup, login }
 
@@ -20,7 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo theo GetxController để đặt sẵn text email sau khi đăng ký thành công
+    // Đặt sẵn text email sau khi đăng ký thành công
     textEmail.text = userController.email.value;
   }
 
