@@ -95,11 +95,11 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
                       ),
                       const SizedBox(height: 10),
 
-                      //3. Nút bấm xác nhận, thực hiện xác thực số điện thoại
+                      //3. Nút bấm xác nhận, thực hiện xác thực số điện thoại -> Chuyển đến xác nhận OTP
                       controller.loadingPage != LoadingPage.confirmPhone
                           ? ElevatedButton(
                               onPressed: () {
-                                controller.phoneAuthentication(LoadingPage.confirmPhone); // Xác thực số điện thoại
+                                controller.phoneAuthentication(LoadingPage.confirmPhone); // Xác thực -> Xác nhận OTP
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange,

@@ -47,8 +47,8 @@ class OtpScreen extends StatelessWidget {
                     focusedBorderColor: Colors.red,
                     enabledBorderColor: Colors.green,
                     onSubmit: (value) {
-                      // Sau khi điền đầy các ô -> Xác thực OTP | value: giá trị toàn bộ các ô của OtpTextField
-                      controller.controlOTP(value);
+                      // Sau khi điền đầy các ô -> Xác thực OTP | value: giá trị toàn bộ OTP các ô của OtpTextField
+                      controller.verifyOTP(value);
                       textConfirmOtp = value; // Cập nhật mã ở UI để dùng lại
                     },
                   ),
@@ -58,6 +58,7 @@ class OtpScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+
                       //1. Gửi lại mã OTP (Xác nhận lại số điện thoại, nhận mã OTP mới)
                       controller.loadingPage != LoadingPage.resendOtp
                           ? ElevatedButton(
@@ -75,7 +76,7 @@ class OtpScreen extends StatelessWidget {
                       controller.loadingPage != LoadingPage.confirmOtp
                           ? ElevatedButton(
                               onPressed: () {
-                                controller.controlOTP(textConfirmOtp);
+                                controller.verifyOTP(textConfirmOtp);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange,

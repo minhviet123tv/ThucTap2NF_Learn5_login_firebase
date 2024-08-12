@@ -18,7 +18,7 @@ class TextFieldLoginRegister extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    return TextField(
+    return TextFormField(
       controller: textControl,
       maxLines: 1, //dòng
       maxLength: maxLength, //số lượng ký tự

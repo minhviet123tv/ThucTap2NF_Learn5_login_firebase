@@ -64,11 +64,9 @@ class _LoginPageState extends State<LoginPage> {
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(
-              height: 30,
-            ),
+            const SizedBox(height: 30),
 
-            //A. Text "MyShop"
+            //A. Text "My App Chat"
             Container(
               alignment: Alignment.center,
               width: double.infinity,
@@ -214,9 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
           ],
         );
       },
