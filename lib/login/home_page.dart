@@ -97,6 +97,18 @@ class HomePage extends StatelessWidget {
                               ],
                             ),
 
+                            // password
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: ListTile(
+                                    title: Text("Password"),
+                                  ),
+                                ),
+                                IconButton(onPressed: () {}, icon: const Icon(Icons.change_circle)),
+                              ],
+                            ),
+
                             //3. Dislay name
                             TextFormField(
                               initialValue: controller.firebaseAuth.currentUser?.displayName ?? "",
