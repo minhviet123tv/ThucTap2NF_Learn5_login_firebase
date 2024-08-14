@@ -162,15 +162,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
 
                     //4. Button login & signup (Ghép nút)
-                    (userController.loadingPage != LoadingPage.signin && userController.loadingPage != LoadingPage.signup)
+                    (userController.loadingPage != LoadingPage.signIn && userController.loadingPage != LoadingPage.signUp)
                         ? ElevatedButton(
                             onPressed: () {
                               if (_uiState == UIState.login) {
                                 // Xử lý bấm LOGIN
-                                userController.signInAppChat(context, LoadingPage.signin);
+                                userController.signInAppChat(context, LoadingPage.signIn);
                               } else {
                                 // Xử lý khi bấm nút SIGNUP
-                                userController.signUpAppChat(context, LoadingPage.signup);
+                                userController.signUpAppChat(context, LoadingPage.signUp);
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -188,12 +188,6 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 10,
                     ),
-
-                    // Nút tạm để code
-                    // ElevatedButton(
-                    //   onPressed: () => Get.to(() => const ConfirmPhoneNumber()),
-                    //   child: const Text("Open confirm phone number"),
-                    // ),
 
                     //5. Chuyển đổi UI sang LOGIN hoặc SIGNUP
                     TextButton(

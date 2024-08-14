@@ -1,10 +1,12 @@
 import 'package:fire_base_app_chat/controller/user_controller.dart';
-import 'package:fire_base_app_chat/custom_widget/text_field_login_register.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ConfirmPhoneNumber extends StatefulWidget {
-  const ConfirmPhoneNumber({super.key});
+
+  final LoadingPage loadingPage; // Trạng thái khi sử dụng trang
+
+  const ConfirmPhoneNumber({super.key, required this.loadingPage});
 
   @override
   State<ConfirmPhoneNumber> createState() => _ConfirmPhoneNumberState();
@@ -96,10 +98,10 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
                       const SizedBox(height: 10),
 
                       //3. Nút bấm xác nhận, thực hiện xác thực số điện thoại -> Chuyển đến xác nhận OTP
-                      controller.loadingPage != LoadingPage.confirmPhone
+                      controller.loadingPage != widget.loadingPage
                           ? ElevatedButton(
                               onPressed: () {
-                                controller.phoneAuthentication(LoadingPage.confirmPhone); // Xác thực -> Xác nhận OTP
+                                controller.phoneAuthentication(widget.loadingPage); // Xác thực -> Xác nhận OTP
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange,

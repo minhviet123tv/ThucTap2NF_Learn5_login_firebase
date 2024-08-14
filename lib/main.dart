@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 
 import 'login/login_page.dart';
 import 'firebase_options.dart';
-import 'login/home_page.dart';
+import 'home/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Đảm bảo đã khởi tạo (cho firebase va ca Bindings)

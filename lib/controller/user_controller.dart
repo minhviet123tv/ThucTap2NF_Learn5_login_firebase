@@ -26,8 +26,6 @@ class UserController extends GetxController {
   final RxString phoneNumber = ''.obs; // Dùng RxString vì định dạng là kiểu +84123456789
   final RxString countryCode = ''.obs;
   final RxString countryCodeAndPhoneNumber = ''.obs;
-  final RxString displayName = ''.obs;
-  final RxString photoURL = ''.obs;
 
   //II. onReady: Thực hiện sau khi cài đặt xong GetxController
   @override
@@ -100,11 +98,11 @@ class UserController extends GetxController {
     if (emailValid && password.value.length >= 6 && password.value == passwordConfirm.value) {
       // Đăng ký bằng hàm của firebase đã tạo
       User? user = await signUpWithEmailAndPassword(email.value, password.value);
-      print("sign up 1");
 
       // Sau khi xác đăng ký email và password thành công
       if (user != null) {
-        Get.to(() => ConfirmPhoneNumber()); // Chuyển hướng đến trang ConfirmPhoneNumber
+        // Chuyển hướng đến trang ConfirmPhoneNumber, trạng thái xác thực khi đăng ký mới
+        Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber,));
       } else {
         print('Some error happend in Sign Up'); // Cũng đã có thông báo trong hàm của firebase
       }
@@ -144,14 +142,12 @@ class UserController extends GetxController {
   //1. Tạo user mới (User của UserCredential)
   Future<User?> signUpWithEmailAndPassword(String email, String password) async {
     try {
-      // Tạo tài khoản mới và trả về tài khoản firebase
+      // Tạo tài khoản mới và trả về User (tài khoản firebase)
       UserCredential credential = await firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
-      print("sign up 2");
       return credential.user;
     } catch (signUpError) {
       // Print Error
       print('Sign Up Error: ${signUpError.toString()}');
-      print("sign up 3");
 
       // Thong bao khi email da ton tai | Notify when email exists
       if (signUpError.toString().contains("email-already-in-use")) {
@@ -205,7 +201,7 @@ class UserController extends GetxController {
 
   //3. Thoát tài khoản firebase và xoá dữ liệu user ở GetxController
   Future<void> signOut() async {
-    loadingPageState(LoadingPage.signout); // update loading page state
+    loadingPageState(LoadingPage.signOut); // update loading page state
 
     try {
       await firebaseAuth.signOut();
@@ -216,8 +212,6 @@ class UserController extends GetxController {
       phoneNumber.value = '';
       countryCode.value = '';
       countryCodeAndPhoneNumber.value = '';
-      displayName.value = '';
-      photoURL.value = '';
 
       loadingPageState(LoadingPage.none); // update loading page state
       Get.toNamed('/login'); // Chuyển hướng đến login
@@ -231,10 +225,10 @@ class UserController extends GetxController {
   //4. Xác nhận số điện thoại: gửi mã OTP về (Nếu số điện thoại có thật)
   // Có thể update số điện thoại luôn ở đây, hoặc chờ xác nhận xong OTP mới update
   Future<void> phoneAuthentication(LoadingPage loadingPage) async {
-    //a. Cập nhật trạng thái loading
+    //A. Cập nhật trạng thái loading
     loadingPageState(loadingPage);
 
-    //b. Kiểm tra dữ liệu đưa vào
+    //B. Kiểm tra dữ liệu đưa vào
     if (phoneNumber.value.isEmpty || countryCode.value.isEmpty) {
       Get.snackbar("Error", 'Please type phone number!', backgroundColor: Colors.green[300]);
       loadingPageState(LoadingPage.none); // Chuyển trạng thái loading page về không
@@ -244,7 +238,7 @@ class UserController extends GetxController {
     // Lấy số điện thoại đầy đủ
     getPhoneNumberAndContryCode();
 
-    //c. Thực hiện phương thức verifyPhoneNumber
+    //C. Thực hiện phương thức verifyPhoneNumber
     await firebaseAuth.verifyPhoneNumber(
       //1. Số điện thoại đầy đủ gồm cả mã quốc gia + số điện thoại
       phoneNumber: countryCodeAndPhoneNumber.value,
@@ -260,9 +254,9 @@ class UserController extends GetxController {
       codeSent: (String verificationId, int? resendToken) {
         this.verificationId.value = verificationId; // Cập nhật verificationId (mã của firebase)
 
-        // Khi dùng trạng thái cho trang là xác nhận số điện thoại và gửi mã
-        if (loadingPage == LoadingPage.confirmPhone) {
-          Get.to(() => OtpScreen()); // Đến trang nhập mã OTP
+        // Khi dùng trạng thái là confirmPhoneNumber hoặc changePhoneNumber -> Confirm OTP | Không thể dùng this.loadingPage
+        if (loadingPage == LoadingPage.confirmPhoneNumber || loadingPage == LoadingPage.changePhoneNumber) {
+          Get.to(() => OtpScreen(loadingPage: loadingPage,)); // Đến trang nhập mã OTP, dùng trạng thái
         }
 
         // Khi dùng trạng thái chỉ gửi lại mã
@@ -287,14 +281,14 @@ class UserController extends GetxController {
       },
     );
 
-    //d. Chuyển trạng thái loading page về không
+    //D. Chuyển trạng thái loading page về không
     loadingPageState(LoadingPage.none);
   }
 
   //5. Xác thực mã OTP
-  Future<void> verifyOTP(String textOtp) async {
+  Future<void> verifyOTP(String textOtp, LoadingPage loadingPage) async {
     // Cập nhật trạng thái load page
-    loadingPageState(LoadingPage.confirmOtp);
+    loadingPageState(loadingPage);
 
     try {
       // Đối tượng dùng để xác thực: truyền verificationId của firebase, mã OTP (đã gửi về số điện thoại và người dùng gõ vào)
@@ -303,15 +297,21 @@ class UserController extends GetxController {
         smsCode: textOtp,
       );
 
-      // Thực hiện xác thực bằng cách đăng nhập tài khoản Credential (gần giống dạng id và mật khẩu là OTP đã gửi về)
-      // (Có thể tạo .then(value){ Get.toNamed('/login'); }; để lấy value, tạo chuyển hướng sau khi xác thực thành công)
-      // UserCredential credential = await firebaseAuth.signInWithCredential(phoneAuthCredential);
-
       // Thực hiện update số điện thoại bằng mã OTP (Mỗi lần update là phải xác thực)
       await FirebaseAuth.instance.currentUser?.updatePhoneNumber(phoneAuthCredential);
 
-      Get.snackbar("Notify", "Register success!", backgroundColor: Colors.green[300]);
-      Get.toNamed('/login');
+      // Xử lý sau khi xác nhận thành công OTP đăng ký tài khoản mới
+      if(loadingPage == LoadingPage.confirmPhoneNumber){
+        Get.snackbar("Notify", "Register success!", backgroundColor: Colors.green[300]);
+        Get.toNamed('/login');
+      }
+
+      // Xử lý khi thay đổi số điện thoại
+      if(loadingPage == LoadingPage.changePhoneNumber){
+        Get.snackbar("Notify", "Change phone number success!", backgroundColor: Colors.green[300]);
+        Get.toNamed('/home');
+      }
+
     } catch (exception) {
       print(['Error OTP: ${exception.toString()}']);
 
@@ -325,36 +325,54 @@ class UserController extends GetxController {
     loadingPageState(LoadingPage.none);
   }
 
-  //6. Update profile (Gồm displayName và photoURL)
-  Future<void> updateProfile(LoadingPage loadingPage) async {
+  //6. Update profile User (Gồm displayName, photoURL, password)
+  Future<void> updateMyUser(BuildContext context, String newString, LoadingPage loadingPage) async {
     loadingPageState(loadingPage); // update loading page state
 
-    // Cập nhật Profile (cả displayName và photoURL)
+    // Cập nhật dữ liệu
     try {
-      await firebaseAuth.currentUser?.updateProfile(displayName: displayName.value, photoURL: photoURL.value);
-      Get.snackbar("Notify", "Update profile success!", backgroundColor: Colors.green[300]);
-      // print("Kiểm tra Update Profile: \n${firebaseAuth.currentUser}");
+      // 1. Cập nhật displayName
+      if(loadingPage == LoadingPage.changeDisplayName){
+        await firebaseAuth.currentUser?.updateDisplayName(newString);
+        Get.snackbar("Notify", "Update displayName success!", backgroundColor: Colors.green[300]);
+      }
+
+      //2. Cập nhật photoURL
+      else if(loadingPage == LoadingPage.changePhotoURL){
+        await firebaseAuth.currentUser?.updatePhotoURL(newString);
+        Get.snackbar("Notify", "Update photoURL success!", backgroundColor: Colors.green[300]);
+      }
+
+      //3. Cập nhật password
+      else if(loadingPage == LoadingPage.changePassword){
+        // Kiểm tra chiều dài mật khẩu
+        if(newString.isEmpty || newString.length < 6){
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password must be >= 6 characters")));
+          return;
+        }
+        // Cập nhật password cho currentUser đang login firebase
+        await firebaseAuth.currentUser?.updatePassword(newString);
+        Get.snackbar("Notify", "Update password success!", backgroundColor: Colors.green[300]);
+      }
     } catch (ex) {
       print(ex.toString());
     }
 
+    FocusScope.of(context).requestFocus(FocusNode()); // Ẩn bàn phím
     loadingPageState(LoadingPage.none); // update loading page state done
-  }
-
-  //7. update password
-  Future<void> updatePassword(String newPassword) async {
-    loadingPageState(LoadingPage.changePassword);
-
-    try {
-      await firebaseAuth.currentUser?.updatePassword(newPassword);
-      Get.snackbar("Notify", "Update password success!");
-    } catch (ex) {
-      print(ex.toString());
-    }
-
-    loadingPageState(LoadingPage.none);
   }
 }
 
 // enum quản lý trạng thái loading trang
-enum LoadingPage { none, signin, signup, signout, confirmPhone, confirmOtp, resendOtp, updateProfile, changePassword }
+enum LoadingPage {
+  none,
+  signIn,
+  signUp,
+  signOut,
+  confirmPhoneNumber,
+  resendOtp,
+  changeDisplayName,
+  changePhotoURL,
+  changePassword,
+  changePhoneNumber,
+}

@@ -6,6 +6,9 @@ import 'package:get/get.dart';
 
 class OtpScreen extends StatelessWidget {
   late String textConfirmOtp = '';
+  final LoadingPage loadingPage;
+
+  OtpScreen({super.key, required this.loadingPage});
 
   // TextStyle của mỗi ô OtpTextField (bằng số lượng các ô)
   List<TextStyle> textStyleOTP = [
@@ -47,8 +50,8 @@ class OtpScreen extends StatelessWidget {
                     focusedBorderColor: Colors.red,
                     enabledBorderColor: Colors.green,
                     onSubmit: (value) {
-                      // Sau khi điền đầy các ô -> Xác thực OTP | value: giá trị toàn bộ OTP các ô của OtpTextField
-                      controller.verifyOTP(value);
+                      // Sau khi điền xong, đầy các ô -> Xác thực OTP | value: giá trị toàn bộ OTP các ô của OtpTextField
+                      controller.verifyOTP(value, loadingPage);
                       textConfirmOtp = value; // Cập nhật mã ở UI để dùng lại
                     },
                   ),
@@ -73,10 +76,10 @@ class OtpScreen extends StatelessWidget {
                           : const SizedBox(width: 140, height: 40, child: Center(child: CircularProgressIndicator())),
 
                       //2. Xác nhận mã OTP (đã gửi về điện thoại)
-                      controller.loadingPage != LoadingPage.confirmOtp
+                      controller.loadingPage != loadingPage
                           ? ElevatedButton(
                               onPressed: () {
-                                controller.verifyOTP(textConfirmOtp);
+                                controller.verifyOTP(textConfirmOtp, loadingPage);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange,

@@ -21,7 +21,7 @@
 // email: null,
 // isEmailVerified: false,
 // isAnonymous: false,
-// metadata: UserMetadata(creationTime: 2024-08-09 03:06:43.951Z, lastSignInTime: 2024-08-11 10:04:48.813Z),
+// metadata: UserMetadata(creationTime: 2024-08-09 03:06:43.951Z, lastSignInTime: 2024-08-11 10:04:48.813Z), // Dùng firebaseAuth.currentUser?.metadata sẽ có được UserMetadata, bên trong là các tham số
 // phoneNumber: +84123456789,
 // photoURL: null,
 // providerData,
@@ -30,3 +30,7 @@
 // tenantId: null,
 // uid: OPZx9khBOYUSchi1pGGNcQvEhdd2
 // )
+
+
+// creationTime tài khoản firebase (Định dạng giờ UTC), có thể lấy milisecond, second, ...
+// controller.firebaseAuth.currentUser?.metadata.creationTime?.toString() ?? "creationTime",
