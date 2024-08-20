@@ -1,3 +1,4 @@
+import 'package:fire_base_app_chat/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
@@ -27,6 +28,9 @@ class UserController extends GetxController {
   final RxString countryCode = ''.obs;
   final RxString countryCodeAndPhoneNumber = ''.obs;
 
+  // Trạng thái UI của login_page
+  late UILoginState uiLoginState = UILoginState.login; // Enum Login or signup state
+
   //II. onReady: Thực hiện sau khi cài đặt xong GetxController
   @override
   void onReady() {
@@ -40,7 +44,13 @@ class UserController extends GetxController {
     update();
   }
 
-  //2. Sign In vào tài khoản firebase
+  //2. Change switch UI Login State
+  void switchLoginState() {
+    uiLoginState == UILoginState.login ? uiLoginState = UILoginState.signup : uiLoginState = UILoginState.login;
+    update(); // update cho UI
+  }
+
+  //3. Sign In vào tài khoản firebase
   Future<void> signInAppChat(BuildContext context, LoadingPage loadingPage) async {
     // Loading page state
     loadingPageState(loadingPage);
@@ -56,12 +66,14 @@ class UserController extends GetxController {
 
     // Sign In, kiểm tra dữ liệu nhập vào (cấu trúc Email)
     if (emailValid && password.value.length >= 6) {
-      User? user = await signInWithEmailAndPassword(email.value, password.value); // Dùng hàm signIn của firebase (đã tạo)
-
-      if (user != null) {
-        Get.toNamed('/home'); // Chuyển về home page nếu đăng nhập thành công
-      } else {
-        print('Error: ${user.toString()}'); // In lỗi nếu không đăng nhập được
+      // Kiểm tra tình trạng login và xác thực email
+      try {
+        User? user = await signInWithEmailAndPassword(email.value, password.value); // Dùng hàm signIn của firebase (đã tạo)
+        if (user != null) {
+          Get.toNamed('/home'); // Chuyển về home page nếu đăng nhập thành công
+        }
+      } catch (ex) {
+        print(ex.toString());
       }
     } else {
       // Thông báo các lỗi của dữ liệu nhập vào
@@ -86,25 +98,26 @@ class UserController extends GetxController {
     loadingPageState(LoadingPage.none);
   }
 
-  //3. Sign Up
+  //4. Sign Up
   void signUpAppChat(BuildContext context, LoadingPage loadingPage) async {
-    // Cập nhật trạng thái
+    //I. Cập nhật trạng thái
     loadingPageState(loadingPage);
 
-    //Kiểm tra cấu trúc Email
+    //II. Kiểm tra cấu trúc Email
     bool emailValid = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email.value);
 
-    // Sign Up
+    //III. Sign Up, kiểm tra cấu trúc email nhập vào
     if (emailValid && password.value.length >= 6 && password.value == passwordConfirm.value) {
-      // Đăng ký bằng hàm của firebase đã tạo
-      User? user = await signUpWithEmailAndPassword(email.value, password.value);
-
-      // Sau khi xác đăng ký email và password thành công
-      if (user != null) {
-        // Chuyển hướng đến trang ConfirmPhoneNumber, trạng thái xác thực khi đăng ký mới
-        Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber,));
-      } else {
-        print('Some error happend in Sign Up'); // Cũng đã có thông báo trong hàm của firebase
+      //1. Đăng ký tài khoản bằng email
+      try {
+        User? user = await signUpWithEmailAndPassword(email.value, password.value); // hàm firrebase đã tạo
+        if (user != null) {
+          // Nếu đăng ký email thành công -> Xác nhận điện thoại
+          Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber)); //  Xác thực điện thoại
+          loadingPageState(LoadingPage.none); // Load xong trang
+        }
+      } catch (ex) {
+        print(ex.toString());
       }
     } else {
       // Notify error
@@ -129,11 +142,11 @@ class UserController extends GetxController {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(notify)));
     }
 
-    // Cập nhật trạng thái -> load xong
+    //IV. Cập nhật trạng thái -> load xong
     loadingPageState(LoadingPage.none);
   }
 
-  //4. Get phoneNumber and countryCode
+  //5. Get phoneNumber and countryCode
   void getPhoneNumberAndContryCode() {
     countryCodeAndPhoneNumber.value = '${countryCode.value}${phoneNumber.value}';
   }
@@ -157,6 +170,8 @@ class UserController extends GetxController {
               "Email already in use!",
               style: TextStyle(fontSize: 16),
             ));
+      } else {
+        Get.snackbar("Error", "Please try again!");
       }
     }
 
@@ -256,7 +271,9 @@ class UserController extends GetxController {
 
         // Khi dùng trạng thái là confirmPhoneNumber hoặc changePhoneNumber -> Confirm OTP | Không thể dùng this.loadingPage
         if (loadingPage == LoadingPage.confirmPhoneNumber || loadingPage == LoadingPage.changePhoneNumber) {
-          Get.to(() => OtpScreen(loadingPage: loadingPage,)); // Đến trang nhập mã OTP, dùng trạng thái
+          Get.to(() => OtpScreen(
+                loadingPage: loadingPage,
+              )); // Đến trang nhập mã OTP, dùng trạng thái
         }
 
         // Khi dùng trạng thái chỉ gửi lại mã
@@ -301,17 +318,16 @@ class UserController extends GetxController {
       await FirebaseAuth.instance.currentUser?.updatePhoneNumber(phoneAuthCredential);
 
       // Xử lý sau khi xác nhận thành công OTP đăng ký tài khoản mới
-      if(loadingPage == LoadingPage.confirmPhoneNumber){
+      if (loadingPage == LoadingPage.confirmPhoneNumber) {
         Get.snackbar("Notify", "Register success!", backgroundColor: Colors.green[300]);
         Get.toNamed('/login');
       }
 
       // Xử lý khi thay đổi số điện thoại
-      if(loadingPage == LoadingPage.changePhoneNumber){
+      if (loadingPage == LoadingPage.changePhoneNumber) {
         Get.snackbar("Notify", "Change phone number success!", backgroundColor: Colors.green[300]);
         Get.toNamed('/home');
       }
-
     } catch (exception) {
       print(['Error OTP: ${exception.toString()}']);
 
@@ -329,24 +345,24 @@ class UserController extends GetxController {
   Future<void> updateMyUser(BuildContext context, String newString, LoadingPage loadingPage) async {
     loadingPageState(loadingPage); // update loading page state
 
-    // Cập nhật dữ liệu
+    // Cập nhật dữ liệu theo trạng thái
     try {
       // 1. Cập nhật displayName
-      if(loadingPage == LoadingPage.changeDisplayName){
+      if (loadingPage == LoadingPage.changeDisplayName) {
         await firebaseAuth.currentUser?.updateDisplayName(newString);
         Get.snackbar("Notify", "Update displayName success!", backgroundColor: Colors.green[300]);
       }
 
       //2. Cập nhật photoURL
-      else if(loadingPage == LoadingPage.changePhotoURL){
+      else if (loadingPage == LoadingPage.changePhotoURL) {
         await firebaseAuth.currentUser?.updatePhotoURL(newString);
         Get.snackbar("Notify", "Update photoURL success!", backgroundColor: Colors.green[300]);
       }
 
       //3. Cập nhật password
-      else if(loadingPage == LoadingPage.changePassword){
+      else if (loadingPage == LoadingPage.changePassword) {
         // Kiểm tra chiều dài mật khẩu
-        if(newString.isEmpty || newString.length < 6){
+        if (newString.isEmpty || newString.length < 6) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password must be >= 6 characters")));
           return;
         }
@@ -376,3 +392,6 @@ enum LoadingPage {
   changePassword,
   changePhoneNumber,
 }
+
+// Quản lý trạng thái UI của login_page
+enum UILoginState { signup, login }

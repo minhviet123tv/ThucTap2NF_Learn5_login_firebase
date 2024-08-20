@@ -25,7 +25,7 @@
 // phoneNumber: +84123456789,
 // photoURL: null,
 // providerData,
-// [UserInfo(displayName: null, email: null, phoneNumber: +84123456789, photoURL: null, providerId: phone, uid: )],
+// [UserInfo(displayName: null, email: null, phoneNumber: +84123456789, photoURL: null, providerId: phone, uid: )], // Có vẻ như chỉ là đơn thuần hiện thông tin của providerData
 // refreshToken: null,
 // tenantId: null,
 // uid: OPZx9khBOYUSchi1pGGNcQvEhdd2
