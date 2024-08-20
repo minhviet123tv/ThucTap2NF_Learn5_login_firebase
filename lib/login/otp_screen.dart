@@ -5,6 +5,7 @@ import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 import 'package:get/get.dart';
 
 class OtpScreen extends StatelessWidget {
+  UserController userController = Get.find();
   late String textConfirmOtp = '';
   final LoadingPage loadingPage;
 
@@ -58,46 +59,43 @@ class OtpScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   //III. Hàng nút điều khiển
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-
-                      //1. Gửi lại mã OTP (Xác nhận lại số điện thoại, nhận mã OTP mới)
-                      controller.loadingPage != LoadingPage.resendOtp
-                          ? ElevatedButton(
-                              onPressed: () {
-                                controller.phoneAuthentication(LoadingPage.resendOtp);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                              ),
-                              child: const Text('Resend OTP', style: TextStyle(color: Colors.white)),
-                            )
-                          : const SizedBox(width: 140, height: 40, child: Center(child: CircularProgressIndicator())),
-
-                      //2. Xác nhận mã OTP (đã gửi về điện thoại)
-                      controller.loadingPage != loadingPage
-                          ? ElevatedButton(
-                              onPressed: () {
-                                controller.verifyOTP(textConfirmOtp, loadingPage);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                              ),
-                              child: const Text(
-                                'Confirm OTP',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            )
-                          : const SizedBox(width: 140, height: 40, child: Center(child: CircularProgressIndicator())),
-                    ],
-                  ),
+                  buttonControlOTP(),
                 ],
               ),
             ),
           );
         },
       ),
+    );
+  }
+
+  // Button Control OTP
+  Widget buttonControlOTP() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        //1. Gửi lại mã OTP (Xác nhận lại số điện thoại, nhận mã OTP mới)
+        userController.loadingPage != LoadingPage.resendOtp
+            ? ElevatedButton(
+                onPressed: () {
+                  userController.phoneAuthentication(LoadingPage.resendOtp);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text('Resend OTP', style: TextStyle(color: Colors.white)),
+              )
+            : const SizedBox(width: 140, height: 40, child: Center(child: CircularProgressIndicator())),
+
+        //2. Xác nhận mã OTP (đã gửi về điện thoại)
+        userController.loadingPage != loadingPage
+            ? ElevatedButton(
+                onPressed: () {
+                  userController.verifyOTP(textConfirmOtp, loadingPage);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                child: const Text('Confirm OTP', style: TextStyle(color: Colors.white)),
+              )
+            : const SizedBox(width: 140, height: 40, child: Center(child: CircularProgressIndicator())),
+      ],
     );
   }
 }

@@ -1,56 +1,41 @@
-import 'package:fire_base_app_chat/home/profile_user.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
+
+import '../model/user_model.dart';
 
 /*
 Home page
  */
 
-class HomePage extends StatefulWidget {
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
+class HomePage extends StatelessWidget {
+  // Truy vấn theo tên dữ liệu trên RealTime Database Firebase (Dạng nút của mô hình dữ liệu tree)
+  final DatabaseReference dataFromRealtimeDatabase = FirebaseDatabase.instance.ref('RealTimeQuery');
 
-class _HomePageState extends State<HomePage> {
-  //A. Dữ liệu
-  var textStyle1 = const TextStyle(fontSize: 20, color: Colors.black);
-  // Thứ tự của item body và menu bottom
-  int indexSelected = 0;
-  // Danh sách body tương ứng item menu bottom
-  List<Widget> listWidgetBody = [
-    const Text(
-      "Page 1",
-      style: TextStyle(fontSize: 20, color: Colors.black),
-    ),
-    ProfileUser(),
-  ];
+  // TextField Controller
+  TextEditingController textAge = TextEditingController();
+  TextEditingController textCountry = TextEditingController();
+  TextEditingController textName = TextEditingController();
 
-  //D. Trang
+  // Trang
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        //I. Widget body
-        body: Center(child: listWidgetBody[indexSelected]),
-
-        //II. Bottom Navigation bar
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: indexSelected, // Thứ tự menu
-          selectedItemColor: Colors.green,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          onTap: (index) {
-            setState(() {
-              indexSelected = index; // Cập nhật index menu
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: "Home",
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.account_circle_outlined), label: "Account"),
+    return Scaffold(
+      appBar: AppBar(
+        leading: const Icon(null),
+        title: const Text("Home page", style: TextStyle(color: Colors.white, fontSize: 24)),
+        backgroundColor: Colors.blue,
+      ),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).requestFocus(FocusNode()), // FocusManager.instance.primaryFocus?.unfocus
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Center(child: Text("Home Page"),),
           ],
         ),
       ),
+      resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
     );
   }
 }
