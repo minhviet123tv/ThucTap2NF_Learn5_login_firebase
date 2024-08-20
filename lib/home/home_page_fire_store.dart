@@ -5,20 +5,20 @@ import 'package:flutter/material.dart';
 import '../model/user_model.dart';
 
 /*
-Home page 2
+Home page sử dụng FireStore
  */
 
-class ChatPage extends StatelessWidget {
+class HomePageFireStore extends StatelessWidget {
   // Trang
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: const Icon(null),
-        title: const Text("Chat page", style: TextStyle(color: Colors.white, fontSize: 24)),
+        title: const Text("Home page FireStore", style: TextStyle(color: Colors.white, fontSize: 24)),
         backgroundColor: Colors.blue,
       ),
-      body: const Center(child: Text("Chat Page", style: TextStyle(fontSize: 20),)),
+      body: const Center(child: Text("Home page FireStore", style: TextStyle(fontSize: 20),)),
       resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
     );
   }
