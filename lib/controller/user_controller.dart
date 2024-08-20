@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,6 +18,7 @@ class UserController extends GetxController {
 
   //I. Dữ liệu chung
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase
+  final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firebase Firestore database
   RxString verificationId = ''.obs; // id xác thực phone number (Được gửi về từ firebase)
   LoadingPage loadingPage = LoadingPage.none; // Tình trạng loading cho page đang dùng
 
@@ -112,8 +114,13 @@ class UserController extends GetxController {
       try {
         User? user = await signUpWithEmailAndPassword(email.value, password.value); // hàm firrebase đã tạo
         if (user != null) {
-          // Nếu đăng ký email thành công -> Xác nhận điện thoại
-          Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber)); //  Xác thực điện thoại
+          // Nếu đăng ký email thành công -> Lưu user vào Firestore database -> Xác nhận điện thoại
+          // users: tên root gốc (có sẵn hoặc tạo nếu chưa có) | doc: con của root chứa uid | set: dữ liệu của mỗi uid
+          await firestore.collection("users").doc(user.uid).set({
+            "uid": user.uid.toString(), // Lưu uid của chính nó
+            "email": email.value.toString(),
+          });
+          Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber)); // Xác thực điện thoại
           loadingPageState(LoadingPage.none); // Load xong trang
         }
       } catch (ex) {
