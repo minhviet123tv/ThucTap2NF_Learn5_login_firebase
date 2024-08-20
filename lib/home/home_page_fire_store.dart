@@ -10,7 +10,6 @@ Home page sử dụng FireStore
  */
 
 class HomePageFireStore extends StatelessWidget {
-
   FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance; // Cloud Firebase Firestore
   UserController userController = Get.find();
 
@@ -23,7 +22,12 @@ class HomePageFireStore extends StatelessWidget {
         title: const Text("Home page FireStore", style: TextStyle(color: Colors.white, fontSize: 24)),
         backgroundColor: Colors.blue,
       ),
-      body: const Center(child: Text("Home page FireStore", style: TextStyle(fontSize: 20),)),
+      body: MaterialButton(
+        onPressed: () {},
+        color: Colors.green,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: const Text("MaterialButton"),
+      ),
       resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
     );
   }

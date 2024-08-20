@@ -115,7 +115,7 @@ class UserController extends GetxController {
         User? user = await signUpWithEmailAndPassword(email.value, password.value); // hàm firrebase đã tạo
         if (user != null) {
           // Nếu đăng ký email thành công -> Lưu user vào Firestore database -> Xác nhận điện thoại
-          // users: tên root gốc (có sẵn hoặc tạo nếu chưa có) | doc: con của root chứa uid | set: dữ liệu của mỗi uid
+          // collection: chứa tên root gốc (có sẵn hoặc tạo nếu chưa có) | doc: con của root (chứa uid) | set: dữ liệu của mỗi doc
           await firestore.collection("users").doc(user.uid).set({
             "uid": user.uid.toString(), // Lưu uid của chính nó
             "email": email.value.toString(),

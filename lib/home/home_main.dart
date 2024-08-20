@@ -2,7 +2,7 @@ import 'package:fire_base_app_chat/home/home_page.dart';
 import 'package:fire_base_app_chat/home/profile_user.dart';
 import 'package:flutter/material.dart';
 
-import 'chat_page.dart';
+import 'chat/chat_page.dart';
 import 'home_page_fire_store.dart';
 
 /*
