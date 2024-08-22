@@ -18,7 +18,7 @@ class UserController extends GetxController {
 
   //I. Dữ liệu chung
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase
-  final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firebase Firestore database
+  // final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firebase Firestore database
   RxString verificationId = ''.obs; // id xác thực phone number (Được gửi về từ firebase)
   LoadingPage loadingPage = LoadingPage.none; // Tình trạng loading cho page đang dùng
 
@@ -114,13 +114,16 @@ class UserController extends GetxController {
       try {
         User? user = await signUpWithEmailAndPassword(email.value, password.value); // hàm firrebase đã tạo
         if (user != null) {
-          // Nếu đăng ký email thành công -> Lưu user vào Firestore database -> Xác nhận điện thoại
-          // collection: chứa tên root gốc (có sẵn hoặc tạo nếu chưa có) | doc: con của root (chứa uid) | set: dữ liệu của mỗi doc
-          await firestore.collection("users").doc(user.uid).set({
+          // Lưu user vào Firestore database (đã đăng ký thành công)
+          // collection: chứa tên bảng (có sẵn hoặc tạo nếu chưa có) | doc: id (của hàng) đặt vào hoặc để trống sẽ tạo tự động
+          // set: Thêm dữ liệu của hàng (các cột)
+          await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
             "uid": user.uid.toString(), // Lưu uid của chính nó
             "email": email.value.toString(),
           });
-          Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber)); // Xác thực điện thoại
+
+          // Chuyển hướng đến trang xác thực điện thoại
+          Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.confirmPhoneNumber));
           loadingPageState(LoadingPage.none); // Load xong trang
         }
       } catch (ex) {
@@ -328,6 +331,7 @@ class UserController extends GetxController {
       if (loadingPage == LoadingPage.confirmPhoneNumber) {
         Get.snackbar("Notify", "Register success!", backgroundColor: Colors.green[300]);
         Get.toNamed('/login');
+        uiLoginState = UILoginState.login; // Chuyển sang trạng thái login
       }
 
       // Xử lý khi thay đổi số điện thoại
