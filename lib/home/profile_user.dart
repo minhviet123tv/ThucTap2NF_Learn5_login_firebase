@@ -136,12 +136,6 @@ class _ProfileUserState extends State<ProfileUser> {
                   userController.firebaseAuth.currentUser?.metadata.lastSignInTime.toString() ?? "lastSignInTime",
                   style: const TextStyle(fontSize: 16),
                 ),
-
-                // Uid
-                Text(
-                  userController.firebaseAuth.currentUser?.uid.toString() ?? "providerData",
-                  style: const TextStyle(fontSize: 15),
-                ),
               ],
             ),
           ),
@@ -154,17 +148,23 @@ class _ProfileUserState extends State<ProfileUser> {
   Widget formUpdateProfile() {
     return Form(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //1. Email
+          //1. uid
+          itemProfile("UID", userController.firebaseAuth.currentUser?.uid.toString() ?? "uid", null, () {}),
+
+          //2. Email
           itemProfile("Email", userController.firebaseAuth.currentUser?.email ?? "", null, () {}),
-          //2. Phone number
+
+          //3. Phone number
           itemProfile("Phone Number", userController.firebaseAuth.currentUser?.phoneNumber ?? "", const Icon(Icons.change_circle), () {
             // Mở trang xác thực số điện thoại, trạng thái thay đổi số mới
             Get.to(() => const ConfirmPhoneNumber(
                   loadingPage: LoadingPage.changePhoneNumber,
                 ));
           }),
-          //3. Text password && Change password
+
+          //4. Text password && Change password
           if (userController.loadingPage != LoadingPage.changePassword)
             itemProfile("Password", "", const Icon(Icons.change_circle), () {
               userController.loadingPageState(LoadingPage.changePassword);
@@ -185,10 +185,9 @@ class _ProfileUserState extends State<ProfileUser> {
               ),
             ),
 
-          //4. Dislay name
+          //5. Dislay name
           TextFormField(
-            // initialValue: controller.firebaseAuth.currentUser?.displayName ?? "", // Lấy trực tiếp từ firebase
-            controller: textNewDisplayName,
+            controller: textNewDisplayName, // Chỉ dùng controller hoặc initialValue
             decoration: InputDecoration(
               label: const Text("Display name", style: TextStyle(fontSize: 16)),
               hintText: "display name",
@@ -202,9 +201,8 @@ class _ProfileUserState extends State<ProfileUser> {
             ),
           ),
 
-          //5. Photo URL
+          //6. Photo URL
           TextFormField(
-            // initialValue: controller.firebaseAuth.currentUser?.photoURL ?? "", // Lấy trực tiếp từ firebase
             controller: textNewPhotoURL,
             decoration: InputDecoration(
               label: const Text("Photo URL", style: TextStyle(fontSize: 16)),

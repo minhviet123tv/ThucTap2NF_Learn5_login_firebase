@@ -1,8 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
-import 'package:fire_base_app_chat/controller/user_controller.dart';
-import 'package:fire_base_app_chat/home/chat/chat_room.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,8 +16,6 @@ class HomePageFireStore extends StatefulWidget {
 class _HomePageFireStoreState extends State<HomePageFireStore> {
   FirestoreController firestoreController = Get.find();
   TextEditingController textSearch = TextEditingController();
-  late Map<String, dynamic> userSearch = {}; // user tìm kiếm
-  final Stream<QuerySnapshot> _users = FirebaseFirestore.instance.collection("users").snapshots();
 
   // Trang
   @override
@@ -37,69 +31,14 @@ class _HomePageFireStoreState extends State<HomePageFireStore> {
         body: Column(
           children: [
             //I. TextField tìm kiếm user theo email
-            TextField(
-              controller: textSearch,
-              decoration: InputDecoration(
-                hintText: "Search",
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    onSearch(textSearch.text);
-                  },
-                  icon: const Icon(Icons.search),
-                ),
-              ),
-            ),
+            GetBuilder<FirestoreController>(builder: (controller) => findUserFollowEmail()),
             const SizedBox(height: 10),
 
             //II. Kết quả tìm kiếm
-            userSearch.isNotEmpty
-                ? Card(
-                    color: Colors.orange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    child: ListTile(title: Text(userSearch['email']), trailing: const Icon(Icons.chat)))
-                : const SizedBox(),
+            GetBuilder<FirestoreController>(builder: (controller) => findUserResult()),
 
             //III. Danh sách User
-            Expanded(
-              child: StreamBuilder(
-                stream: _users,
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(child: Text("hasError"));
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: snapshot.data?.docs.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        color: Colors.grey[200],
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        child: ListTile(
-                          title: Text(snapshot.data?.docs[index]['email']),
-                          subtitle: Text(snapshot.data?.docs[index]['uid']),
-                          trailing: Icon(Icons.chat),
-                          onTap: () {
-                            String myUid = firestoreController.firebaseAuth.currentUser!.uid;
-                            String friendUid = snapshot.data?.docs[index]['uid'];
-                            String roomId = createChatRoomId(myUid, friendUid);
-                            Map<String, dynamic> myFriend = {
-                              'email': snapshot.data?.docs[index]['email'],
-                              'uid': snapshot.data?.docs[index]['uid'],
-                            };
-                            Get.to(() => ChatRoom(userFriend: myFriend, chatRoomId: roomId)); // Chuyển sang chat room
-                          },
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
+            GetBuilder<FirestoreController>(builder: (controller) => listAllUser()),
           ],
         ),
         resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
@@ -107,38 +46,94 @@ class _HomePageFireStoreState extends State<HomePageFireStore> {
     );
   }
 
-  // Tìm user theo email
-  void onSearch(String key) async {
-    // Truy cập (get) dữ liệu theo key search và gán vào map (dùng then()) | Tìm trực tiếp nội dung trong các cột (không cần id)
-    try {
-      await firestoreController.firestore
-          .collection('users')
-          .where(
-            'email',
-            isEqualTo: key,
-          )
-          .get()
-          .then((value) {
-        // Trả dữ liệu về nếu có | Nếu không có dữ liệu sẽ xử lý ở catch
-        if (value.docs[0].data().isNotEmpty) {
-          userSearch = value.docs[0].data(); // value.docs: Là danh sách dữ liệu của bảng 'user'
-        }
-      });
-    } catch (ex) {
-      print(ex.toString());
-      userSearch.clear(); // clear user tìm kiếm
-    }
-
-    // print(userMap);
-    setState(() {});
+  //I. TextField tìm kiếm user theo email
+  Widget findUserFollowEmail() {
+    return TextField(
+      controller: textSearch,
+      onChanged: (value) {
+        firestoreController.update(); // update cho nút clear
+      },
+      decoration: InputDecoration(
+        hintText: "Search",
+        contentPadding: const EdgeInsets.only(left: 8, top: 12),
+        suffixIcon: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (textSearch.text.isNotEmpty)
+              IconButton(
+                onPressed: () {
+                  firestoreController.clearSearch(context, textSearch); // clear cả TextField và userSearch
+                },
+                icon: const Icon(Icons.clear),
+              ),
+            IconButton(
+              onPressed: () {
+                firestoreController.searchFriendFollowEmail(context, textSearch.text); // Tìm userSearch theo key
+              },
+              icon: const Icon(Icons.search),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
-  // Tạo chatRoomId: Ghép 2 uid hoặc email lại thành id và để theo thứ tự chữ cái đầu bảng đứng trước
-  String createChatRoomId(String email1, String email2) {
-    if (email1[0].toLowerCase().codeUnits[0] > email2[0].toLowerCase().codeUnits[0]) {
-      return "$email1.$email2";
+  //II. Kết quả tìm kiếm 1 user, hiển thị nếu có kết quả tìm kiếm và có textSearch
+  Widget findUserResult() {
+    if (firestoreController.userSearch.isNotEmpty && textSearch.text.isNotEmpty) {
+      return Card(
+        color: Colors.orange,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ListTile(
+          title: Text(firestoreController.userSearch['email']),
+          trailing: const Icon(Icons.chat),
+          onTap: () => firestoreController.goToChatRoomWithSearchFriend(), // Vào chatroom
+        ),
+      );
     } else {
-      return "$email2.$email1";
+      return const SizedBox();
+    }
+  }
+
+  //III. List All User, hiển thị nếu không có kết quả tìm kiếm
+  Widget listAllUser() {
+    if (firestoreController.userSearch.isEmpty || textSearch.text.isEmpty) {
+      return Expanded(
+        child: StreamBuilder(
+          stream: firestoreController.queryListUser,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(child: Text("hasError"));
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            // Danh sách tất cả user
+            return ListView.builder(
+              itemCount: snapshot.data?.docs.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  color: Colors.grey[200],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: ListTile(
+                    title: Text(snapshot.data?.docs[index]['email']),
+                    subtitle: Text(snapshot.data?.docs[index]['uid']),
+                    onTap: () {
+                      firestoreController.goToChatRoom(snapshot, index); // vào ChatRoom
+                    },
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      );
+    } else {
+      return const SizedBox();
     }
   }
 }
