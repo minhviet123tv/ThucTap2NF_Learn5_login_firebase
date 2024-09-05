@@ -46,7 +46,7 @@ class SearchPageFireStore extends StatelessWidget {
     return TextField(
       controller: textSearch,
       onChanged: (value) => firestoreController.updateValueSearch(value),
-      onSubmitted: (value) => firestoreController.searchListUserFollowEmailGlobal(context, textSearch.text, PageState.none),
+      onSubmitted: (value) => firestoreController.updateValueSearch(value),
       decoration: InputDecoration(
         hintText: "Search",
         contentPadding: const EdgeInsets.only(left: 8, top: 12),
@@ -60,7 +60,7 @@ class SearchPageFireStore extends StatelessWidget {
                 icon: const Icon(Icons.clear),
               ),
             IconButton(
-              onPressed: () => firestoreController.searchListUserFollowEmailGlobal(context, textSearch.text, PageState.none),
+              onPressed: () => firestoreController.updateValueSearch(textSearch.text),
               icon: const Icon(Icons.search),
             )
           ],
@@ -71,27 +71,80 @@ class SearchPageFireStore extends StatelessWidget {
 
   //II. Kết quả tìm kiếm 1 user, hiển thị nếu có kết quả tìm kiếm và có textSearch
   Widget findUserResult() {
-    if (firestoreController.listUserSearch.isNotEmpty && textSearch.text.isNotEmpty) {
+    if (textSearch.text.isNotEmpty) {
       return Expanded(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: ListView.builder(
-            itemCount: firestoreController.listUserSearch.length,
-            itemBuilder: (context, index) {
-              return Card(
-                color: Colors.orange[100],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                child: ListTile(
-                  onTap: () => firestoreController.goToChatRoomFromWithFriend({
-                    'email': firestoreController.listUserSearch[index]['email'],
-                    'uid': firestoreController.listUserSearch[index]['uid']
-                  }),
-                  title: Text(firestoreController.listUserSearch[index]['email']),
-                  trailing: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.group_add),
-                  ), // Vào chatroom
-                ),
+          child: StreamBuilder(
+            // Truy vấn tất cả user (trừ user đang login)
+            stream: firestoreController.firestore
+                .collection("users")
+                .where(
+                  'email',
+                  isGreaterThanOrEqualTo: textSearch.text,
+                  isNotEqualTo: firestoreController.firebaseAuth.currentUser?.email,
+                )
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Center(child: Text("hasError: Somethings went wrong"));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              // Danh sách tất cả user
+              return ListView.builder(
+                itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
+                itemBuilder: (context, index) {
+                  return Card(
+                    color: Colors.grey[200],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    child: FutureBuilder(
+                      future: firestoreController.checkIsFriend({
+                        'email': snapshot.data?.docs[index]['email'],
+                        'uid': snapshot.data?.docs[index]['uid'],
+                      }),
+                      builder: (context, snapshotCheck) {
+                        if (snapshotCheck.hasError) {
+                          return const Center(child: Text("hasError: Somethings went wrong"));
+                        }
+                        if (snapshotCheck.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        // Hiển thị icon tương ứng mối quan hệ
+                        return ListTile(
+                          onTap: () {
+                            if (snapshotCheck.data == true) {
+                              firestoreController.goToChatRoom(snapshot, index); // vào ChatRoom cùng với user được click
+                            }
+                          },
+                          title: Text(snapshot.data?.docs[index]['email']), // Truy vấn 'email' của user trên firestore
+                          subtitle: Text(snapshot.data?.docs[index]['uid']), // Truy vấn 'uid' của user trên firestore
+                          trailing: snapshotCheck.data == false
+                              ? IconButton(
+                                  onPressed: () {
+                                    firestoreController.sendRequestFriend({
+                                      'email': snapshot.data?.docs[index]['email'],
+                                      'uid': snapshot.data?.docs[index]['uid'],
+                                    });
+                                  },
+                                  icon: const Icon(Icons.group_add),
+                                )
+                              : IconButton(
+                                  onPressed: () {
+                                    firestoreController.goToChatRoom(snapshot, index); // vào ChatRoom cùng với user được click
+                                  },
+                                  icon: const Icon(
+                                    Icons.group,
+                                    color: Colors.green,
+                                  )),
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -104,7 +157,7 @@ class SearchPageFireStore extends StatelessWidget {
 
   //III. List All User, hiển thị nếu không có kết quả tìm kiếm
   Widget listAllUser() {
-    if (firestoreController.listUserSearch.isEmpty && textSearch.text.isEmpty) {
+    if (textSearch.text.isEmpty) {
       return Expanded(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -112,7 +165,8 @@ class SearchPageFireStore extends StatelessWidget {
             // Truy vấn tất cả user (trừ user đang login)
             stream: firestoreController.firestore
                 .collection("users")
-                .where('uid', isNotEqualTo: firestoreController.firebaseAuth.currentUser?.uid)
+                .where('email', isNotEqualTo: firestoreController.firebaseAuth.currentUser?.email)
+                .orderBy('email', descending: false)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
