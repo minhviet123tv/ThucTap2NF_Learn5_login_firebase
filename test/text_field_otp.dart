@@ -31,7 +31,8 @@ class MyApp extends StatelessWidget {
               numberOfFields: 5,
               borderColor: const Color(0xFF512DA8),
               showFieldAsBox: true,
-              borderRadius: BorderRadius.circular(10), // Viền hộp
+              borderRadius: BorderRadius.circular(10),
+              // Viền hộp
               onCodeChanged: (String code) {
                 //handle validation or checks here
               },
@@ -47,7 +48,6 @@ class MyApp extends StatelessWidget {
                     });
               }, // end onSubmit
             ),
-
             OtpTextField(
               numberOfFields: 5,
               // Số lượng number bằng số lượng TextStyle
@@ -55,24 +55,32 @@ class MyApp extends StatelessWidget {
               focusedBorderColor: accentPurpleColor,
               styles: const [
                 TextStyle(
-                  color: Colors.green, fontSize: 25,
+                  color: Colors.green,
+                  fontSize: 25,
                 ),
                 TextStyle(
-                  color: Colors.red, fontSize: 25,
+                  color: Colors.red,
+                  fontSize: 25,
                 ),
                 TextStyle(
-                  color: Colors.brown, fontSize: 25,
+                  color: Colors.brown,
+                  fontSize: 25,
                 ),
                 TextStyle(
-                  color: Colors.grey, fontSize: 25,
+                  color: Colors.grey,
+                  fontSize: 25,
                 ),
                 TextStyle(
-                  color: Colors.blue, fontSize: 25,
+                  color: Colors.blue,
+                  fontSize: 25,
                 )
               ],
-              showFieldAsBox: false, // Hiện hộp cho từng số
-              borderWidth: 6.0, // Chiều rộng của thanh đế, hộp
-              borderRadius: BorderRadius.circular(5), // Viền hộp
+              showFieldAsBox: false,
+              // Hiện hộp cho từng số
+              borderWidth: 6.0,
+              // Chiều rộng của thanh đế, hộp
+              borderRadius: BorderRadius.circular(5),
+              // Viền hộp
               onCodeChanged: (String code) {
                 // Chạy khi mã được nhập vào | xử lý xác thực hoặc kiểm tra tại đây nếu cần
               },
@@ -80,7 +88,6 @@ class MyApp extends StatelessWidget {
                 // Chạy khi mọi trường văn bản được điền đầy | runs when every textfield is filled
               },
             ),
-
           ],
         ),
       ),
@@ -88,12 +95,7 @@ class MyApp extends StatelessWidget {
   }
 
   void nav(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomeMain(),
-      ),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => HomeMain()));
   }
 }
 
