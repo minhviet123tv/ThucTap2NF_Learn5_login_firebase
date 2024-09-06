@@ -55,7 +55,11 @@ class ChatRoom extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20),));
+            return const Center(
+                child: Text(
+              "Somethings went wrong",
+              style: TextStyle(fontSize: 20),
+            ));
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -68,8 +72,7 @@ class ChatRoom extends StatelessWidget {
               itemCount: snapshot.data!.docs.length, // List bởi docs của bảng 'message' trên Cloud FireStore
               itemBuilder: (context, index) {
                 QueryDocumentSnapshot query = snapshot.data!.docs[index]; // dữ liệu của 1 tin nhắn (message)
-                Timestamp time = query['time']; // Đổi định đạng time
-                DateTime dateTime = time.toDate();
+                DateTime dateTime = query['time'].toDate(); // Lấy time theo định đạng
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Column(
@@ -91,7 +94,9 @@ class ChatRoom extends StatelessWidget {
                               textAlign: TextAlign.left,
                             ),
                           ),
-                          trailing: Text("${dateTime.hour}:${dateTime.minute}"), // Thời gian nhắn tin
+                          trailing: dateTime.minute >= 10
+                              ? Text("${dateTime.hour}:${dateTime.minute}")
+                              : Text("${dateTime.hour}:0${dateTime.minute}"), // Thời gian nhắn tin
                           shape: RoundedRectangleBorder(
                             side: BorderSide(
                               color: firestoreController.firebaseAuth.currentUser?.email == query['sendBy']

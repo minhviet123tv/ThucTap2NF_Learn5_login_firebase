@@ -50,6 +50,7 @@ class _ProfileUserState extends State<ProfileUser> {
         appBar: AppBar(
           leading: const Icon(null),
           title: const Text("My Profile", style: TextStyle(color: Colors.white, fontSize: 24)),
+          centerTitle: true,
           backgroundColor: Colors.blue,
         ),
         body: GetBuilder<UserController>(
@@ -240,7 +241,7 @@ class _ProfileUserState extends State<ProfileUser> {
         ),
         IconButton(
           onPressed: function,
-          icon: icon ?? const SizedBox(),
+          icon: icon ?? const Icon(null),
         ),
       ],
     );

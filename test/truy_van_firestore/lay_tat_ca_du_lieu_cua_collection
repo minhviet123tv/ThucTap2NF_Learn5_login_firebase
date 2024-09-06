@@ -2,12 +2,11 @@ https://firebase.google.com/docs/firestore/query-data/get-data
 
 // Cách 1: Truy vấn cho Widget -> Dùng Stream
 final Stream<QuerySnapshot> queryListUser = FirebaseFirestore.instance.collection("users").snapshots(); // list user firestore
--> Dùng StreamBuilder để lấy dữ liệu cho từng item
+-> Dùng StreamBuilder để lấy dữ liệu cho từng item trong snapshot
 
-// Cách 2: Truy vấn logic rồi tuỳ sử dụng | isEqualTo: Những đối tượng có kết quả "capital" là true
+// Cách 2: get.then() | Truy vấn danh sách (collection) bằng get rồi sử dụng id hoặc data ở querySnapshot.docs | isEqualTo: Những đối tượng có kết quả "capital" là true
 firestore.collection("cities").where("capital", isEqualTo: true).get().then(
   (querySnapshot) {
-    print("Successfully completed");
     for (var docSnapshot in querySnapshot.docs) {
       print('${docSnapshot.id} => ${docSnapshot.data()}'); // id: là id của nút dữ liệu đó | data: dữ liệu trong nút
     }
@@ -15,16 +14,46 @@ firestore.collection("cities").where("capital", isEqualTo: true).get().then(
   onError: (e) => print("Error completing: $e"),
 );
 
-// Lấy collection (tất cả dữ liệu) ở bảng 'chatroom'
-// void getAllIdChatRoom() async {
-//   // QuerySnapshot: Lấy danh sách id và dữ liệu khác của 1 bảng
-//   await firestoreController.firestore.collection("chatroom").get().then(
-//     (querySnapshot) {
-//       for (var docSnapshot in querySnapshot.docs) {
-//         print('${docSnapshot.id} => ${docSnapshot.data()['chatroom-id']}');
-//       }
-//       // print(querySnapshot['chatroom-id']);
-//     },
-//     onError: (e) => print("Error QuerySnapshot: $e"),
-//   );
-// }
+//VD: Lấy collection (tất cả dữ liệu) ở bảng 'chatroom' | querySnapshot.docs: Danh sách chứa id và dữ liệu 1 bảng
+   await firestoreController.firestore.collection("chatroom").get().then(
+     (querySnapshot) {
+       for (var docSnapshot in querySnapshot.docs) {
+         print('${docSnapshot.id} => ${docSnapshot.data()['chatroom-id']}');
+       }
+       // print(querySnapshot['chatroom-id']);
+     },
+     onError: (e) => print("Error QuerySnapshot: $e"),
+   );
+
+
+// Lấy danh sách chat group của 1 user bằng cách truy vấn từ 'chatgroup'
+StreamBuilder(
+  // Truy vấn tất cả 'chatgroup' -> Lấy id -> Truy vấn tiếp
+  stream: firestoreController.firestore.collection('chatgroup').snapshots(), // Danh sách 'chatgroup'
+  builder: (context, snapshot) {
+    if (snapshot.hasError) {
+      return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
+    } else if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return ListView.builder(
+      itemCount: snapshot.data?.docs.length,
+      itemBuilder: (context, index) {
+        return FutureBuilder(
+          future: firestoreController.checkIdChatGroupForUser(snapshot.data!.docs[index].id),
+          builder: (context, snapshot2) {
+            // Hiển thị nếu có kết quả check id (và chứa uid của user đang login - true)
+            if(snapshot2.hasData){
+              if(snapshot2.data == true){
+                return Card(
+                  child: Text("${snapshot.data?.docs[index]['groupName']}"),
+                );
+              }
+            }
+            return SizedBox();
+          },
+        );
+      },
+    );
+  },
+),
