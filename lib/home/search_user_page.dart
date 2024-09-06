@@ -26,7 +26,7 @@ class SearchPageFireStore extends StatelessWidget {
         body: Column(
           children: [
             //I. TextField tìm kiếm user theo email
-            GetBuilder<FirestoreController>(builder: (controller) => findUserFollowEmail(context)),
+            GetBuilder<FirestoreController>(builder: (controller) => textFieldFindUserFollowEmail(context)),
             const SizedBox(height: 10),
 
             //II. Kết quả tìm kiếm
@@ -42,11 +42,11 @@ class SearchPageFireStore extends StatelessWidget {
   }
 
   //I. TextField tìm kiếm user theo email
-  Widget findUserFollowEmail(BuildContext context) {
+  Widget textFieldFindUserFollowEmail(BuildContext context) {
     return TextField(
       controller: textSearch,
-      onChanged: (value) => firestoreController.updateValueSearch(value),
-      onSubmitted: (value) => firestoreController.updateValueSearch(value),
+      onChanged: (value) => firestoreController.updateFollowSearchValue(context, value),
+      onSubmitted: (value) => firestoreController.updateFollowSearchValue(context, value),
       decoration: InputDecoration(
         hintText: "Search",
         contentPadding: const EdgeInsets.only(left: 8, top: 12),
@@ -56,11 +56,11 @@ class SearchPageFireStore extends StatelessWidget {
           children: [
             if (textSearch.text.isNotEmpty)
               IconButton(
-                onPressed: () => firestoreController.clearSearch(context, textSearch, PageState.none),
+                onPressed: () => firestoreController.clearSearchUser(context, textSearch),
                 icon: const Icon(Icons.clear),
               ),
             IconButton(
-              onPressed: () => firestoreController.updateValueSearch(textSearch.text),
+              onPressed: () => firestoreController.updateFollowSearchValue(context, textSearch.text),
               icon: const Icon(Icons.search),
             )
           ],
@@ -79,11 +79,7 @@ class SearchPageFireStore extends StatelessWidget {
             // Truy vấn tất cả user (trừ user đang login)
             stream: firestoreController.firestore
                 .collection("users")
-                .where(
-                  'email',
-                  isGreaterThanOrEqualTo: textSearch.text,
-                  isNotEqualTo: firestoreController.firebaseAuth.currentUser?.email,
-                )
+                .where('email', isGreaterThanOrEqualTo: textSearch.text, isNotEqualTo: firestoreController.currentUser?.email)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
@@ -165,7 +161,7 @@ class SearchPageFireStore extends StatelessWidget {
             // Truy vấn tất cả user (trừ user đang login)
             stream: firestoreController.firestore
                 .collection("users")
-                .where('email', isNotEqualTo: firestoreController.firebaseAuth.currentUser?.email)
+                .where('email', isNotEqualTo: firestoreController.currentUser?.email)
                 .orderBy('email', descending: false)
                 .snapshots(),
             builder: (context, snapshot) {

@@ -21,6 +21,7 @@ class FirestoreController extends GetxController {
   //I. Dữ liệu chung
   final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firestore database
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase
+  final User? currentUser = FirebaseAuth.instance.currentUser; // currentUser
   late List<Map<String, dynamic>> listUserSearch = []; // user tìm kiếm
   late List<Map<String, dynamic>> listUserCreateGroupChat = [];
   late List<Map<String, dynamic>> listUserSearchCreateGroupChat = [];
@@ -124,7 +125,22 @@ class FirestoreController extends GetxController {
     update();
   }
 
-  //1.4 update mỗi khi gõ text: Xử lý nếu xoá hết, update cho: nút clear, trạng thái hiển thị kết quả hoặc list user
+  //1.4 Clear Search: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
+  void clearSearchUser(BuildContext context, TextEditingController textSearch) {
+    textSearch.clear();
+    FocusScope.of(context).requestFocus(FocusNode());
+    update();
+  }
+
+  //1.5 Cập nhật theo giá trị của textField -> Cập nhật hiển thị theo tình trạng của value
+  void updateFollowSearchValue(BuildContext context, String value) {
+    if (value.isEmpty) {
+      FocusScope.of(context).requestFocus(FocusNode());
+    }
+    update();
+  }
+
+  //1.6 update mỗi khi gõ text: Xử lý nếu xoá hết, update cho: nút clear, trạng thái hiển thị kết quả hoặc list user
   void updateValueSearch(String value) {
     if (value.isEmpty) {
       listUserSearch.clear();
@@ -132,7 +148,7 @@ class FirestoreController extends GetxController {
     update();
   }
 
-  //1.5 update mỗi khi gõ tex: Nếu textField trống thì chuyển trạng thái
+  //1.7 update mỗi khi gõ text: Nếu textField trống thì chuyển trạng thái
   void updateValueSearchCreateGroup(String value, PageState pageState) {
     if (value.isEmpty) {
       loadPageState(pageState);
@@ -141,7 +157,7 @@ class FirestoreController extends GetxController {
     update();
   }
 
-  //1.6 Back cho trang Crate chat group: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
+  //1.8 Back cho trang Crate chat group: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
   void backAndClearForCreateGroupChat(PageState pageState) {
     loadPageState(pageState);
     listUserSearchCreateGroupChat.clear();

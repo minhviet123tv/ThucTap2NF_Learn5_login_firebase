@@ -76,9 +76,8 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
   Widget textFieldFindUserFollowEmail(BuildContext context) {
     return TextField(
       controller: textSearchFriend,
-      onChanged: (value) => firestoreController.updateValueSearchCreateGroup(value, PageState.none),
-      onSubmitted: (value) =>
-          firestoreController.searchListFriendFollowEmail(context, textSearchFriend.text, PageState.searchFriendCreateGroup),
+      onChanged: (value) => firestoreController.updateFollowSearchValue(context, value),
+      onSubmitted: (value) => firestoreController.updateFollowSearchValue(context, value),
       decoration: InputDecoration(
         hintText: "Search friend",
         contentPadding: const EdgeInsets.only(left: 8, top: 12),
@@ -88,12 +87,11 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
           children: [
             if (textSearchFriend.text.isNotEmpty)
               IconButton(
-                onPressed: () => firestoreController.clearSearch(context, textSearchFriend, PageState.none),
+                onPressed: () => firestoreController.clearSearchUser(context, textSearchFriend),
                 icon: const Icon(Icons.clear),
               ),
             IconButton(
-              onPressed: () =>
-                  firestoreController.searchListFriendFollowEmail(context, textSearchFriend.text, PageState.searchFriendCreateGroup),
+              onPressed: () => firestoreController.updateFollowSearchValue(context, textSearchFriend.text),
               icon: const Icon(Icons.search),
             ),
           ],
@@ -104,59 +102,15 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
 
   //III. Kết quả tìm kiếm 1 user trong danh sách friend, hiển thị nếu có kết quả tìm kiếm và có textSearch
   Widget findUserResult() {
-    if (firestoreController.pageState == PageState.searchFriendCreateGroup) {
-      return Expanded(
-        child: firestoreController.listUserSearchCreateGroupChat.isNotEmpty ? ListView.builder(
-          itemCount: firestoreController.listUserSearchCreateGroupChat.length,
-          itemBuilder: (context, index) {
-            return Card(
-              color: Colors.orange[100],
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: ListTile(
-                title: Text(firestoreController.listUserSearchCreateGroupChat[index]['email']),
-                // Check xem đã có trong danh sách tạo group chưa (cho listUserSearchCreateGroupChat)
-                trailing: firestoreController.checkUserInCreateGroupList({
-                  'email': firestoreController.listUserSearchCreateGroupChat[index]['email'],
-                  'uid': firestoreController.listUserSearchCreateGroupChat[index]['uid'],
-                })
-                    ? IconButton(
-                        onPressed: () {
-                          firestoreController.removeUserFromListCreateGroupChat({
-                            'email': firestoreController.listUserSearchCreateGroupChat[index]['email'],
-                            'uid': firestoreController.listUserSearchCreateGroupChat[index]['uid'],
-                          });
-                        },
-                        icon: const Icon(Icons.check), // Icon báo đã có trong list, click sẽ remove khỏi list
-                      )
-                    : IconButton(
-                        onPressed: () {
-                          firestoreController.addUserToListCreateGroupChat({
-                            'email': firestoreController.listUserSearchCreateGroupChat[index]['email'],
-                            'uid': firestoreController.listUserSearchCreateGroupChat[index]['uid'],
-                          }); //
-                        },
-                        icon: const Icon(Icons.add), // Icon báo chưa có trong list, click sẽ add vào list
-                      ),
-              ),
-            );
-          },
-        ) : Center(child: Text("No result by: \"${textSearchFriend.text}\"", style: const TextStyle(fontSize: 16, color: Colors.grey),),),
-      );
-    } else {
-      return const SizedBox();
-    }
-  }
-
-  //IV. List Friend, hiển thị khi không tìm kiếm
-  Widget listUser() {
-    if (firestoreController.pageState != PageState.searchFriendCreateGroup) {
+    if (textSearchFriend.text.isNotEmpty) {
       return Expanded(
         child: StreamBuilder(
-          //1. Truy vấn danh sách tất cả Friend | Điều kiện theo key nào thì sắp xếp theo key đó
+          //1. Danh sách Friend theo điều kiện where
           stream: firestoreController.firestore
               .collection("users")
               .doc(firestoreController.firebaseAuth.currentUser?.uid)
-              .collection('my_friend')
+              .collection('my_friends')
+              .where('email', isGreaterThanOrEqualTo: textSearchFriend.text)
               .orderBy('email', descending: false)
               .snapshots(),
           builder: (context, snapshot) {
@@ -167,43 +121,122 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
               return const Center(child: CircularProgressIndicator());
             }
 
-            //2. Hiển thị danh sách user
-            return snapshot.data!.docs.isNotEmpty ? ListView.builder(
-              itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
-              itemBuilder: (context, index) {
-                return Card(
-                  color: Colors.grey[200],
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  child: ListTile(
-                    title: Text(snapshot.data?.docs[index]['email']), // Truy vấn 'email' của user trên firestore
-                    subtitle: Text(snapshot.data?.docs[index]['uid']), // Truy vấn 'uid' của user trên firestore
-                    // Check xem đã có trong danh sách tạo group chưa (cho danh sách user từ firebase)
-                    trailing: firestoreController.checkUserInCreateGroupList({
-                      'email': snapshot.data?.docs[index]['email'],
-                      'uid': snapshot.data?.docs[index]['uid'],
-                    })
-                        ? IconButton(
-                            onPressed: () {
-                              firestoreController.removeUserFromListCreateGroupChat({
-                                'email': snapshot.data?.docs[index]['email'],
-                                'uid': snapshot.data?.docs[index]['uid'],
-                              });
-                            },
-                            icon: const Icon(Icons.check),
-                          ) // Nút báo đã có trong list, click sẽ remove khỏi list
-                        : IconButton(
-                            onPressed: () {
-                              firestoreController.addUserToListCreateGroupChat({
-                                'email': snapshot.data?.docs[index]['email'],
-                                'uid': snapshot.data?.docs[index]['uid'],
-                              }); //
-                            },
-                            icon: const Icon(Icons.add),
-                          ), // Nút báo chưa có trong list, click sẽ add vào list
-                  ),
-                );
-              },
-            ) : const Center(child: Text("No friends yet", style: TextStyle(fontSize: 16, color: Colors.grey),),);
+            //2. Hiển thị danh sách user nếu có
+            return snapshot.data!.docs.isNotEmpty
+                ? ListView.builder(
+                    itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
+                    itemBuilder: (context, index) {
+                      return Card(
+                        color: Colors.grey[200],
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        child: ListTile(
+                          title: Text(snapshot.data?.docs[index]['email']), // Truy vấn 'email' của user trên firestore
+                          subtitle: Text(snapshot.data?.docs[index]['uid']), // Truy vấn 'uid' của user trên firestore
+                          // Check xem đã có trong danh sách tạo group chưa (cho danh sách user từ firebase)
+                          trailing: firestoreController.checkUserInCreateGroupList({
+                            'email': snapshot.data?.docs[index]['email'],
+                            'uid': snapshot.data?.docs[index]['uid'],
+                          })
+                              ? IconButton(
+                                  onPressed: () {
+                                    firestoreController.removeUserFromListCreateGroupChat({
+                                      'email': snapshot.data?.docs[index]['email'],
+                                      'uid': snapshot.data?.docs[index]['uid'],
+                                    });
+                                  },
+                                  icon: const Icon(Icons.check),
+                                ) // Nút báo đã có trong list, click sẽ remove khỏi list
+                              : IconButton(
+                                  onPressed: () {
+                                    firestoreController.addUserToListCreateGroupChat({
+                                      'email': snapshot.data?.docs[index]['email'],
+                                      'uid': snapshot.data?.docs[index]['uid'],
+                                    }); //
+                                  },
+                                  icon: const Icon(Icons.add),
+                                ), // Nút báo chưa có trong list, click sẽ add vào list
+                        ),
+                      );
+                    },
+                  )
+                : Center(
+                    child: Text(
+                      "No result by ${textSearchFriend.text}",
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  );
+          },
+        ),
+      );
+    } else {
+      return const SizedBox();
+    }
+  }
+
+  //IV. List Friend, hiển thị khi không tìm kiếm
+  Widget listUser() {
+    if (textSearchFriend.text.isEmpty) {
+      return Expanded(
+        child: StreamBuilder(
+          //1. Danh sách tất cả Friend của user đang login
+          stream: firestoreController.firestore
+              .collection("users")
+              .doc(firestoreController.firebaseAuth.currentUser?.uid)
+              .collection('my_friends')
+              .orderBy('email', descending: false)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(child: Text("hasError: Somethings went wrong"));
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            //2. Hiển thị danh sách user nếu có
+            return snapshot.data!.docs.isNotEmpty
+                ? ListView.builder(
+                    itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
+                    itemBuilder: (context, index) {
+                      return Card(
+                        color: Colors.grey[200],
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        child: ListTile(
+                          title: Text(snapshot.data?.docs[index]['email']), // Truy vấn 'email' của user trên firestore
+                          subtitle: Text(snapshot.data?.docs[index]['uid']), // Truy vấn 'uid' của user trên firestore
+                          // Check xem đã có trong danh sách tạo group chưa (cho danh sách user từ firebase)
+                          trailing: firestoreController.checkUserInCreateGroupList({
+                            'email': snapshot.data?.docs[index]['email'],
+                            'uid': snapshot.data?.docs[index]['uid'],
+                          })
+                              ? IconButton(
+                                  onPressed: () {
+                                    firestoreController.removeUserFromListCreateGroupChat({
+                                      'email': snapshot.data?.docs[index]['email'],
+                                      'uid': snapshot.data?.docs[index]['uid'],
+                                    });
+                                  },
+                                  icon: const Icon(Icons.check),
+                                ) // Nút báo đã có trong list, click sẽ remove khỏi list
+                              : IconButton(
+                                  onPressed: () {
+                                    firestoreController.addUserToListCreateGroupChat({
+                                      'email': snapshot.data?.docs[index]['email'],
+                                      'uid': snapshot.data?.docs[index]['uid'],
+                                    }); //
+                                  },
+                                  icon: const Icon(Icons.add),
+                                ), // Nút báo chưa có trong list, click sẽ add vào list
+                        ),
+                      );
+                    },
+                  )
+                : const Center(
+                    child: Text(
+                      "No friends yet",
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  );
           },
         ),
       );
