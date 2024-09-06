@@ -35,9 +35,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           child: GestureDetector(
-            onTap: () {
-              FocusManager.instance.primaryFocus?.unfocus();
-            },
+            onTap: ()=> FocusManager.instance.primaryFocus?.unfocus(),
             child: SingleChildScrollView(
               child: GetBuilder<UserController>(
                 builder: (controller) {
