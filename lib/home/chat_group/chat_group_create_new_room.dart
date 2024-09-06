@@ -26,7 +26,7 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
         appBar: AppBar(
           leading: IconButton(
             onPressed: () {
-              firestoreController.backAndClearForCreateGroupChat(PageState.none);
+              firestoreController.backAndClearForCreateGroupChat();
             },
             icon: const Icon(Icons.arrow_back),
           ),
@@ -161,10 +161,9 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
                   )
                 : Center(
                     child: Text(
-                      "No result by ${textSearchFriend.text}",
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  );
+                    "No result by \"${textSearchFriend.text}\"",
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ));
           },
         ),
       );

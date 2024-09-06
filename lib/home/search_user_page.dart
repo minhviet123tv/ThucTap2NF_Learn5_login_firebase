@@ -90,7 +90,7 @@ class SearchPageFireStore extends StatelessWidget {
               }
 
               // Danh sách tất cả user
-              return ListView.builder(
+              return snapshot.data!.docs.isNotEmpty ? ListView.builder(
                 itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
                 itemBuilder: (context, index) {
                   return Card(
@@ -141,7 +141,11 @@ class SearchPageFireStore extends StatelessWidget {
                     ),
                   );
                 },
-              );
+              ) : Center(
+                  child: Text(
+                    "No result by \"${textSearch.text}\"",
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ));
             },
           ),
         ),
@@ -215,10 +219,7 @@ class SearchPageFireStore extends StatelessWidget {
                                   onPressed: () {
                                     firestoreController.goToChatRoom(snapshot, index); // vào ChatRoom cùng với user được click
                                   },
-                                  icon: const Icon(
-                                    Icons.group,
-                                    color: Colors.green,
-                                  )),
+                                  icon: const Icon(Icons.group, color: Colors.green)),
                         );
                       },
                     ),

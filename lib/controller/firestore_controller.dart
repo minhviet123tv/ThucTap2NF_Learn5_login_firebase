@@ -22,117 +22,17 @@ class FirestoreController extends GetxController {
   final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firestore database
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase
   final User? currentUser = FirebaseAuth.instance.currentUser; // currentUser
-  late List<Map<String, dynamic>> listUserSearch = []; // user tìm kiếm
   late List<Map<String, dynamic>> listUserCreateGroupChat = [];
-  late List<Map<String, dynamic>> listUserSearchCreateGroupChat = [];
-  PageState pageState = PageState.none;
-
-  loadPageState(PageState pageState) {
-    this.pageState = pageState;
-  }
 
   //I. Hàm truy vấn firestore
-  //1.1 Tìm list user theo email bằng key, phạm vi tất cả user ở firestore
-  void searchListUserFollowEmailGlobal(BuildContext context, String key, PageState pageState) async {
-    loadPageState(pageState);
-
-    // Kiểm tra dữ liệu key đưa vào
-    if (key.isEmpty) {
-      update();
-      return;
-    }
-
-    try {
-      // Truy cập (get) dữ liệu theo key search và gán vào list (dùng then)
-      await firestore
-          .collection('users')
-          .where('email', isGreaterThanOrEqualTo: key, isNotEqualTo: firebaseAuth.currentUser?.email)
-          .get()
-          .then((querySnapshot) {
-        // Đưa danh sách dữ liệu tìm được vào list
-        if (querySnapshot.docs.isNotEmpty) {
-          querySnapshot.docs.forEach((element) {
-            if (pageState == PageState.searchFriendCreateGroup) {
-              listUserSearchCreateGroupChat.add(element.data());
-            } else {
-              listUserSearch.add(element.data()); // data: Là dữ liệu Map của user trong danh sách firestore
-            }
-          });
-        }
-      });
-    } catch (ex) {
-      print("ERROR:\n$ex");
-      if (pageState == PageState.searchFriendCreateGroup) {
-        listUserSearchCreateGroupChat.clear();
-      } else {
-        listUserSearch.clear(); // clear list user tìm kiếm
-      }
-      Get.snackbar("Notify", "\"$key\" not found", backgroundColor: Colors.grey[300]);
-    }
-
-    // Đóng bàn phím và update
-    FocusScope.of(context).requestFocus(FocusNode());
-    update();
-  }
-
-  //1.2 Tìm list user friend theo email bằng key, phạm vi trong danh sách bạn bè
-  void searchListFriendFollowEmail(BuildContext context, String key, PageState pageState) async {
-    loadPageState(pageState);
-
-    // Kiểm tra dữ liệu key đưa vào
-    if (key.isEmpty) {
-      update();
-      return;
-    }
-
-    try {
-      // Truy cập (get) dữ liệu theo key search và gán vào list (dùng then)
-      await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('my_friends').get().then((querySnapshot) {
-        // Đưa danh sách dữ liệu tìm được vào list
-        if (querySnapshot.docs.isNotEmpty) {
-          querySnapshot.docs.forEach((element) {
-            if (pageState == PageState.searchFriendCreateGroup) {
-              listUserSearchCreateGroupChat.add(element.data());
-            } else {
-              listUserSearch.add(element.data()); // data: Là dữ liệu Map của user trong danh sách firestore
-            }
-          });
-        }
-      });
-    } catch (ex) {
-      print("ERROR:\n$ex");
-
-      if (pageState == PageState.searchFriendCreateGroup) {
-        listUserSearchCreateGroupChat.clear();
-      } else {
-        listUserSearch.clear(); // clear list user tìm kiếm
-      }
-      Get.snackbar("Notify", "\"$key\" not found", backgroundColor: Colors.grey[300]);
-    }
-
-    // Đóng bàn phím và update
-    FocusScope.of(context).requestFocus(FocusNode());
-    update();
-  }
-
-  //1.3 Clear Search: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
-  void clearSearch(BuildContext context, TextEditingController textSearch, PageState pageState) {
-    loadPageState(pageState);
-    listUserSearchCreateGroupChat.clear();
-    listUserSearch.clear();
-    textSearch.clear();
-    FocusScope.of(context).requestFocus(FocusNode());
-    update();
-  }
-
-  //1.4 Clear Search: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
+  //1.1 Clear Search: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
   void clearSearchUser(BuildContext context, TextEditingController textSearch) {
     textSearch.clear();
     FocusScope.of(context).requestFocus(FocusNode());
     update();
   }
 
-  //1.5 Cập nhật theo giá trị của textField -> Cập nhật hiển thị theo tình trạng của value
+  //1.2 Cập nhật theo giá trị của textField -> Cập nhật hiển thị theo tình trạng của value
   void updateFollowSearchValue(BuildContext context, String value) {
     if (value.isEmpty) {
       FocusScope.of(context).requestFocus(FocusNode());
@@ -140,27 +40,8 @@ class FirestoreController extends GetxController {
     update();
   }
 
-  //1.6 update mỗi khi gõ text: Xử lý nếu xoá hết, update cho: nút clear, trạng thái hiển thị kết quả hoặc list user
-  void updateValueSearch(String value) {
-    if (value.isEmpty) {
-      listUserSearch.clear();
-    }
-    update();
-  }
-
-  //1.7 update mỗi khi gõ text: Nếu textField trống thì chuyển trạng thái
-  void updateValueSearchCreateGroup(String value, PageState pageState) {
-    if (value.isEmpty) {
-      loadPageState(pageState);
-      listUserSearchCreateGroupChat.clear();
-    }
-    update();
-  }
-
-  //1.8 Back cho trang Crate chat group: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
-  void backAndClearForCreateGroupChat(PageState pageState) {
-    loadPageState(pageState);
-    listUserSearchCreateGroupChat.clear();
+  //1.3 Back cho trang Crate chat group: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
+  void backAndClearForCreateGroupChat() {
     listUserCreateGroupChat.clear();
     Get.back();
   }
@@ -375,7 +256,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8. Check xem mối quan hệ 2 bên đã là bạn bè chưa
+  //8.1 Check xem mối quan hệ 2 bên đã là bạn bè chưa
   Future<bool> checkIsFriend(Map<String, dynamic> friend) async {
 
     bool checkIsFriend = false;
@@ -397,7 +278,7 @@ class FirestoreController extends GetxController {
     return checkIsFriend;
   }
 
-  //8.1 Gửi yêu cầu kết bạn đến friend (theo uid, dùng uid làm id request)
+  //8.2 Gửi yêu cầu kết bạn đến friend (theo uid, dùng uid làm id request)
   void sendRequestFriend(Map<String, dynamic> friend) async {
     // Kiểm tra xem đã đang yêu cầu kết bạn chưa (1 điều kiện: Có trong danh sách 'send_request_to_friend' của user đang login)
     try {
@@ -446,7 +327,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.2 Chấp nhận yêu cầu kết bạn: Thêm vào danh sách bạn bè, xoá trong danh sách yêu cầu của cả 2
+  //8.3 Chấp nhận yêu cầu kết bạn: Thêm vào danh sách bạn bè, xoá trong danh sách yêu cầu của cả 2
   void acceptRequestFriend(Map<String, dynamic> friend) async {
     try {
       //a.1 Thêm cho danh sách 'my_friends' của user đang login, dùng uid để làm id cho 'my_friends'
@@ -476,7 +357,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.3 Từ chối yêu cầu kết bạn: xoá trong các danh sách yêu cầu của cả 2
+  //8.4 Từ chối yêu cầu kết bạn của người khác: xoá trong các danh sách yêu cầu của cả 2
   void cancelRequestFriend(Map<String, dynamic> friend) async {
     try {
       //a. Xoá yêu cầu kết bạn trong 'request_from_friend' của user đang login (đã dùng uid của friend để làm uid)
@@ -498,7 +379,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.4 Từ chối yêu cầu kết bạn: xoá trong các danh sách yêu cầu của cả 2
+  //8.5 Xoá yêu cầu kết bạn đã gửi đi: xoá trong các danh sách yêu cầu của cả 2
   void deleteRequestSendToFriend(Map<String, dynamic> friend) async {
     try {
       //1. Xoá yêu cầu kết bạn trong 'send_request_to_friend' của user đang login đến friend
@@ -522,7 +403,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.5 Cập nhật lại yêu cầu kết bạn: Làm mới thời gian của yêu cầu của friend để đưa lên trên. Ngoài ra có thể tạo message khi yêu cầu
+  //8.6 Cập nhật lại yêu cầu kết bạn đã gửi đi: Làm mới thời gian của yêu cầu của friend để đưa lên trên. Ngoài ra có thể tạo message khi yêu cầu
   void refeshRequestSendToFriend(Map<String, dynamic> friend) async {
     try {
       // Cập nhật lại thời gian cho fiend
@@ -536,5 +417,3 @@ class FirestoreController extends GetxController {
     }
   }
 }
-
-enum PageState { searchFriendCreateGroup, none }

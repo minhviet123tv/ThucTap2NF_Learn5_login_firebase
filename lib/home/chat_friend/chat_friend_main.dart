@@ -85,9 +85,6 @@ class _HomeMainState extends State<ChatFriendMain> with TickerProviderStateMixin
               onTap: (index) {
                 setState(() {
                   this.index = index;
-                  if(index == 2){
-                    firestoreController.listUserSearch.clear(); // Làm sạch cho list tìm kiếm
-                  }
                 });
               },
             )
