@@ -1,0 +1,30 @@
+https://firebase.google.com/docs/firestore/query-data/get-data
+
+// Cách 1: Truy vấn cho Widget -> Dùng Stream
+final Stream<QuerySnapshot> queryListUser = FirebaseFirestore.instance.collection("users").snapshots(); // list user firestore
+-> Dùng StreamBuilder để lấy dữ liệu cho từng item
+
+// Cách 2: Truy vấn logic rồi tuỳ sử dụng | isEqualTo: Những đối tượng có kết quả "capital" là true
+firestore.collection("cities").where("capital", isEqualTo: true).get().then(
+  (querySnapshot) {
+    print("Successfully completed");
+    for (var docSnapshot in querySnapshot.docs) {
+      print('${docSnapshot.id} => ${docSnapshot.data()}'); // id: là id của nút dữ liệu đó | data: dữ liệu trong nút
+    }
+  },
+  onError: (e) => print("Error completing: $e"),
+);
+
+// Lấy collection (tất cả dữ liệu) ở bảng 'chatroom'
+// void getAllIdChatRoom() async {
+//   // QuerySnapshot: Lấy danh sách id và dữ liệu khác của 1 bảng
+//   await firestoreController.firestore.collection("chatroom").get().then(
+//     (querySnapshot) {
+//       for (var docSnapshot in querySnapshot.docs) {
+//         print('${docSnapshot.id} => ${docSnapshot.data()['chatroom-id']}');
+//       }
+//       // print(querySnapshot['chatroom-id']);
+//     },
+//     onError: (e) => print("Error QuerySnapshot: $e"),
+//   );
+// }

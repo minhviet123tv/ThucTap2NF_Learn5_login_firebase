@@ -1,0 +1,41 @@
+// if (textMessage.text.isNotEmpty) {
+
+// Hàm add to Firestore: collection: tên bảng ('message')
+
+// firestoreController.firestore.collection("message").add({
+//   'message': textMessage.text.toString().trim(),
+//   'time': DateTime.now(),
+//   'email': userController.firebaseAuth.currentUser?.email,
+//   'id': "",
+// }).then((value) {
+//   print("ID:\n" + value.id);
+//   // Lưu (cập nhật) tên id vừa tạo (tự động) vào nội dung bên trong
+//   firestoreController.firestore.collection('message').doc(value.id).update({'id': value.id});
+//   // userController.firestore.collection('message').doc(value.id).delete(); // Xoá dữ liệu của 1 id
+// });
+//
+// textMessage.clear(); // clear TextField
+// FocusScope.of(context).requestFocus(FocusNode()); // Đóng bàn phím
+//
+// }
+
+
+
+// Lấy id nếu có, lưu id nếu chưa có (mới chat, mới tạo)
+String idFromFirestore = "";
+await firestore.collection("chatroom").doc(chatRoomId).get().then(
+    (querySnapshot) async {
+
+  // Lấy id 'chatroom' (nếu có)
+  if(querySnapshot.exists){
+    idFromFirestore = querySnapshot['chatroom-id']; // Lấy trường dữ liệu 'chatroom-id' trong 'chatroom'
+  }
+  // Lưu id 'chatroom' (nếu chưa có)
+  else {
+    await firestore.collection('chatroom').doc(chatRoomId).set({
+      "chatroom-id": chatRoomId, // (ngang hàng, cùng cấp với danh sách 'message')
+    });
+  }
+},
+onError: (e) => print("Error QuerySnapshot: $e"),
+);
