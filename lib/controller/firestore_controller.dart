@@ -20,8 +20,7 @@ class FirestoreController extends GetxController {
 
   //I. Dữ liệu chung
   final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firestore database
-  final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase
-  final User? currentUser = FirebaseAuth.instance.currentUser; // currentUser
+  final FirebaseAuth firebaseAuth = FirebaseAuth.instance; // Firebase | Không thể tạo sẵn currentUser
   late List<Map<String, dynamic>> listUserCreateGroupChat = [];
 
   //I. Hàm truy vấn firestore
@@ -48,10 +47,9 @@ class FirestoreController extends GetxController {
 
   //2.1 Go To Chat Room
   void goToChatRoom(AsyncSnapshot<QuerySnapshot<Object?>> snapshot, int index) {
-    // Tạo id chatroom là ghép của 2 uid (Chữ cái lớn hơn đứng trước)
-    String myUid = firebaseAuth.currentUser!.uid;
+    // Tạo id chatroom là ghép của 2 user uid (Chữ cái lớn hơn đứng trước)
     String friendUid = snapshot.data?.docs[index]['uid'];
-    String roomId = getRoomIdWithFriend(myUid, friendUid);
+    String roomId = getRoomIdWithFriend(firebaseAuth.currentUser!.uid, friendUid);
 
     // Tạo dữ liệu friend
     Map<String, dynamic> myFriend = {
@@ -69,7 +67,7 @@ class FirestoreController extends GetxController {
   }
 
   //2.3 Go To ChatRoom With Search Friend
-  void goToChatRoomFromWithFriend(Map<String, dynamic> userFriend) {
+  void goToChatRoomWithFriend(Map<String, dynamic> userFriend) {
     // Tạo id chatroom là ghép của 2 uid (Chữ cái lớn hơn đứng trước)
     String roomId = getRoomIdWithFriend(firebaseAuth.currentUser!.uid, userFriend['uid']);
 
@@ -82,13 +80,9 @@ class FirestoreController extends GetxController {
     });
   }
 
-  //2.4 Get RoomId With Friend
+  //2.4 Get RoomId With Friend: Tạo id với cách sắp xếp theo chữ cái đầu
   String getRoomIdWithFriend(String myUid, String friendUid) {
-    if (myUid[0]
-        .toLowerCase()
-        .codeUnits[0] >= friendUid[0]
-        .toLowerCase()
-        .codeUnits[0]) {
+    if (myUid[0].toLowerCase().codeUnits[0] >= friendUid[0].toLowerCase().codeUnits[0]) {
       return "$myUid.$friendUid";
     } else {
       return "$friendUid.$myUid";
@@ -117,29 +111,43 @@ class FirestoreController extends GetxController {
     return user;
   }
 
-  //3. Gửi tin nhắn: Lưu vào firestore theo bảng 'chatroom' -> id -> bảng 'chats'
-  void sendMessage(BuildContext context, TextEditingController textMessage, String chatRoomId) async {
+  //3. Gửi tin nhắn: Lưu chatRoomId vào 'chat_room_id' của user và friend, sau đó lưu vào bảng 'chatroom'
+  void sendMessage(BuildContext context, TextEditingController textMessage, String chatRoomId, ScrollController scrollController,
+      Map<String, dynamic> userFriend) async {
     if (textMessage.text.isNotEmpty) {
-      // Lưu id (bên trong) nếu chưa có (mới chat, mới tạo)
-      await firestore.collection("chatroom").doc(chatRoomId).get().then(
-            (querySnapshot) async {
-          if (!querySnapshot.exists) {
-            await firestore.collection('chatroom').doc(chatRoomId).set({
-              "chatroom-id": chatRoomId, // (ngang hàng, cùng cấp với danh sách 'message')
-            });
-          }
-        },
-        onError: (e) => print("Error QuerySnapshot: $e"),
-      );
+      try {
+        //I.1 Thêm id cuộc chat của 2 người và thông tin vào bảng 'chat_room_id' của user đang login
+        await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(chatRoomId).set({
+          'friend_uid': userFriend['uid'],
+          'last_time': DateTime.now(), // Dùng để sắp xếp thứ tự danh sách cuộc chat của user đang login
+          'read': true, // Báo rằng đã đọc tin nhắn mới nhất (của cuộc chat này), chú ý cần đánh dấu cả khi mới mở cuộc chat
+        });
 
-      // Thêm 1 message vào bên trong danh sách message
-      await firestore.collection('chatroom').doc(chatRoomId).collection('message').add({
-        "sendBy": firebaseAuth.currentUser?.email, // người gửi tin nhắn
-        'content': textMessage.text,
-        'time': DateTime.now(), // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
-      });
+        //I.2 Thêm id cuộc chat của 2 người và thông tin vào bảng 'chat_room_id' của friend
+        await firestore.collection('users').doc(userFriend['uid']).collection('chat_room_id').doc(chatRoomId).set({
+          'friend_uid': firebaseAuth.currentUser?.uid,
+          'last_time': DateTime.now(), // Dùng để sắp xếp thứ tự danh sách cuộc chat của friend
+          'read': false, // Báo rằng chưa đọc tin nhắn mới nhất
+        });
+
+        //II.1 Lưu vào bảng 'chatroom' chung: Thêm vào danh sách 'message' tin mới nhất
+        await firestore.collection('chatroom').doc(chatRoomId).collection('message').add({
+          "sendBy": firebaseAuth.currentUser?.email, // người gửi tin nhắn, xác định xem ai là người nhắn nội dung này
+          'content': textMessage.text, // Nội dung tin nhắn
+          'time': DateTime.now(), // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
+        });
+
+        //II.2 Update bảng 'chatroom' chung: Cập nhật thời gian sử dụng mới nhất của 'chatroom' này (cùng cấp nhưng khác 'message')
+        await firestore.collection('chatroom').doc(chatRoomId).set({
+          "chatroom_id": chatRoomId,
+          'last_time': DateTime.now(), // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
+        });
+      } catch (ex) {
+        print(ex);
+      }
     }
 
+    scrollListView(scrollController); // Cuộn đến tin mới nhất
     textMessage.clear(); // clear TextField
     FocusScope.of(context).requestFocus(FocusNode()); // Đóng bàn phím
   }
@@ -212,8 +220,7 @@ class FirestoreController extends GetxController {
       // Xử lý sau khi tạo xong 1 'chatgroup' mới
       listUserCreateGroupChat.clear(); // Xoá lưu list vừa thêm
       update(); // Cập nhật cho màn hình danh sách chat group
-      Get.to(() =>
-          ChatGroupRoom(
+      Get.to(() => ChatGroupRoom(
             idChatGroupRoom: idChatGroupRoom,
             isCreateGroup: true,
           )); // Đến Chat Group Room
@@ -223,8 +230,8 @@ class FirestoreController extends GetxController {
   }
 
   //7.1 Gửi tin nhắn: Lưu vào firestore theo bảng 'chatgroup' -> id -> bảng 'message_chatgroup'
-  void sendMessageChatGroup(BuildContext context, TextEditingController textMessage, String idChatGroup,
-      ScrollController scrollController) async {
+  void sendMessageChatGroup(
+      BuildContext context, TextEditingController textMessage, String idChatGroup, ScrollController scrollController) async {
     // Nếu text message trống thì không làm gì và tạm dừng
     if (textMessage.text.isEmpty) {
       return;
@@ -256,29 +263,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.1 Check xem mối quan hệ 2 bên đã là bạn bè chưa
-  Future<bool> checkIsFriend(Map<String, dynamic> friend) async {
-
-    bool checkIsFriend = false;
-
-    try {
-      await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('my_friends').where(
-          'uid', isEqualTo: friend['uid']).get().then((querySnapshot){
-            // Nếu đã là bạn bè -> Có tồn tại trong danh sách bạn bè
-            if(querySnapshot.docs.isNotEmpty){
-              checkIsFriend = true;
-            } else {
-              checkIsFriend = false;
-            }
-      });
-    } catch (ex) {
-      print(ex);
-    }
-
-    return checkIsFriend;
-  }
-
-  //8.2 Gửi yêu cầu kết bạn đến friend (theo uid, dùng uid làm id request)
+  //8.1 Gửi yêu cầu kết bạn đến friend (theo uid, dùng uid làm id request)
   void sendRequestFriend(Map<String, dynamic> friend) async {
     // Kiểm tra xem đã đang yêu cầu kết bạn chưa (1 điều kiện: Có trong danh sách 'send_request_to_friend' của user đang login)
     try {
@@ -318,8 +303,6 @@ class FirestoreController extends GetxController {
             'uid': firebaseAuth.currentUser?.uid,
             'time': DateTime.now(),
           });
-
-          Get.snackbar("Notify", "Friend request sent!", backgroundColor: Colors.green[300]);
         }
       });
     } catch (ex) {
@@ -327,7 +310,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.3 Chấp nhận yêu cầu kết bạn: Thêm vào danh sách bạn bè, xoá trong danh sách yêu cầu của cả 2
+  //8.2 Chấp nhận yêu cầu kết bạn: Thêm vào danh sách bạn bè, xoá trong danh sách yêu cầu của cả 2
   void acceptRequestFriend(Map<String, dynamic> friend) async {
     try {
       //a.1 Thêm cho danh sách 'my_friends' của user đang login, dùng uid để làm id cho 'my_friends'
@@ -357,7 +340,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.4 Từ chối yêu cầu kết bạn của người khác: xoá trong các danh sách yêu cầu của cả 2
+  //8.3 Từ chối yêu cầu kết bạn của người khác: xoá trong các danh sách yêu cầu của cả 2
   void cancelRequestFriend(Map<String, dynamic> friend) async {
     try {
       //a. Xoá yêu cầu kết bạn trong 'request_from_friend' của user đang login (đã dùng uid của friend để làm uid)
@@ -379,7 +362,7 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.5 Xoá yêu cầu kết bạn đã gửi đi: xoá trong các danh sách yêu cầu của cả 2
+  //8.4 Xoá yêu cầu kết bạn đã gửi đi: xoá trong các danh sách yêu cầu của cả 2
   void deleteRequestSendToFriend(Map<String, dynamic> friend) async {
     try {
       //1. Xoá yêu cầu kết bạn trong 'send_request_to_friend' của user đang login đến friend
@@ -403,13 +386,25 @@ class FirestoreController extends GetxController {
     }
   }
 
-  //8.6 Cập nhật lại yêu cầu kết bạn đã gửi đi: Làm mới thời gian của yêu cầu của friend để đưa lên trên. Ngoài ra có thể tạo message khi yêu cầu
+  //8.5 Cập nhật lại yêu cầu kết bạn đã gửi đi: Làm mới thời gian của yêu cầu của friend để đưa lên trên. Ngoài ra có thể tạo message khi yêu cầu
   void refeshRequestSendToFriend(Map<String, dynamic> friend) async {
     try {
       // Cập nhật lại thời gian cho fiend
       await firestore.collection('users').doc(friend['uid']).collection('request_from_friend').doc(firebaseAuth.currentUser?.uid).set({
         'email': firebaseAuth.currentUser?.email,
         'uid': firebaseAuth.currentUser?.uid,
+        'time': DateTime.now(),
+      });
+
+      // Cập nhật lại thời gian cho user đang login
+      await firestore
+          .collection('users')
+          .doc(firebaseAuth.currentUser?.uid)
+          .collection('send_request_to_friend')
+          .doc(friend['uid'])
+          .set({
+        'email': friend['email'],
+        'uid': friend['uid'],
         'time': DateTime.now(),
       });
     } catch (ex) {

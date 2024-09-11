@@ -48,18 +48,16 @@ class ChatGroupRoom extends StatelessWidget {
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              //I. Danh sách các tin nhắn
-              listMessage(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            //I. Danh sách các tin nhắn
+            listMessage(),
 
-              //II. TextField gửi tin nhắn
-              textFieldMessage(context),
-            ],
-          ),
+            //II. TextField gửi tin nhắn
+            textFieldMessage(context),
+          ],
         ),
       ),
       resizeToAvoidBottomInset: true, // Đẩy bottom sheet, TextField lên khi có bàn phím
@@ -86,10 +84,10 @@ class ChatGroupRoom extends StatelessWidget {
 
         // Danh sách tin nhắn
         if (snapshot.hasData) {
-          return SizedBox(
-            height: MediaQuery.of(context).orientation == Orientation.portrait
-                ? MediaQuery.of(context).size.height * 0.84 // Màn hình dọc thì 84%
-                : MediaQuery.of(context).size.height * 0.66, // Màn hình ngang thì 66%
+          return Expanded(
+            // height: MediaQuery.of(context).orientation == Orientation.portrait
+            //     ? MediaQuery.of(context).size.height * 0.84 // Màn hình dọc thì 84%
+            //     : MediaQuery.of(context).size.height * 0.66, // Màn hình ngang thì 66%
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(8),
@@ -162,7 +160,7 @@ class ChatGroupRoom extends StatelessWidget {
   Widget textFieldMessage(BuildContext context) {
     return TextFormField(
       controller: textMessage,
-      autofocus: false,
+      autofocus: false, // Tự focus sẵn sàng gõ chữ khi mới vào
       decoration: InputDecoration(
         filled: true, // Không trong suốt
         hintText: "Message",

@@ -79,7 +79,7 @@ class _CreateChatGroupState extends State<CreateChatGroup> {
       onChanged: (value) => firestoreController.updateFollowSearchValue(context, value),
       onSubmitted: (value) => firestoreController.updateFollowSearchValue(context, value),
       decoration: InputDecoration(
-        hintText: "Search friend",
+        hintText: "Search through my friends list",
         contentPadding: const EdgeInsets.only(left: 8, top: 12),
         suffixIcon: Row(
           mainAxisAlignment: MainAxisAlignment.end,

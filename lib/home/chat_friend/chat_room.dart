@@ -16,10 +16,13 @@ class ChatRoom extends StatelessWidget {
   // Dữ liệu
   TextEditingController textMessage = TextEditingController();
   FirestoreController firestoreController = Get.find();
+  final ScrollController _scrollController = ScrollController();
 
   // Trang
   @override
   Widget build(BuildContext context) {
+    // Luôn cuộn đến điểm cuối của list tin nhắn khi mới mở
+    WidgetsBinding.instance.addPostFrameCallback((_) => firestoreController.scrollListView(_scrollController));
     return Scaffold(
       appBar: AppBar(
         title: Text(userFriend['email'], style: const TextStyle(color: Colors.white, fontSize: 20)),
@@ -46,7 +49,7 @@ class ChatRoom extends StatelessWidget {
   Widget listMessage() {
     return Expanded(
       child: StreamBuilder(
-        // Stream truy vấn danh sách 'message' trong bảng 'chatroom' theo id (hoặc tạo nếu chưa có)
+        // Stream truy vấn danh sách 'message' trong bảng 'chatroom' theo id (hoặc tạo khi gửi 'message' nếu chưa có)
         stream: firestoreController.firestore
             .collection("chatroom")
             .doc(chatRoomId)
@@ -55,11 +58,7 @@ class ChatRoom extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(
-                child: Text(
-              "Somethings went wrong",
-              style: TextStyle(fontSize: 20),
-            ));
+            return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -68,6 +67,7 @@ class ChatRoom extends StatelessWidget {
           // Danh sách tin nhắn
           if (snapshot.hasData) {
             return ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(8),
               itemCount: snapshot.data!.docs.length, // List bởi docs của bảng 'message' trên Cloud FireStore
               itemBuilder: (context, index) {
@@ -144,7 +144,7 @@ class ChatRoom extends StatelessWidget {
               suffixIcon: IconButton(
                 onPressed: () {
                   // Thực hiện chat: Lưu message của email đang login vào firestore
-                  firestoreController.sendMessage(context, textMessage, chatRoomId);
+                  firestoreController.sendMessage(context, textMessage, chatRoomId, _scrollController, userFriend);
                 },
                 icon: const Icon(
                   Icons.send,
