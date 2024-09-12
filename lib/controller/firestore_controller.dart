@@ -71,6 +71,8 @@ class FirestoreController extends GetxController {
     // Tạo id chatroom là ghép của 2 uid (Chữ cái lớn hơn đứng trước)
     String roomId = getRoomIdWithFriend(firebaseAuth.currentUser!.uid, userFriend['uid']);
 
+    // Đánh dấu là đã đọc tin nhắn cuối của cuộc chat này cho user đang login
+
     // Chuyển sang chat room
     Get.to(() {
       return ChatRoom(
@@ -111,36 +113,40 @@ class FirestoreController extends GetxController {
     return user;
   }
 
-  //3. Gửi tin nhắn: Lưu chatRoomId vào 'chat_room_id' của user và friend, sau đó lưu vào bảng 'chatroom'
+  //3.1 Gửi tin nhắn: Lưu chatRoomId vào 'chat_room_id' của user và friend, sau đó lưu vào bảng 'chatroom'
   void sendMessage(BuildContext context, TextEditingController textMessage, String chatRoomId, ScrollController scrollController,
       Map<String, dynamic> userFriend) async {
     if (textMessage.text.isNotEmpty) {
       try {
-        //I.1 Thêm id cuộc chat của 2 người và thông tin vào bảng 'chat_room_id' của user đang login
+
+        // Tạo cố đinh 1 thời gian chung | Thời gian của máy ảo có thể sai lệch tạo nên thứ tự chưa chuẩn, nếu dùng máy thật thì không bị sai
+        DateTime timeNow = DateTime.now();
+
+        //I.1 Thêm thông tin vào bảng 'chat_room_id' của user đang login
         await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(chatRoomId).set({
           'friend_uid': userFriend['uid'],
-          'last_time': DateTime.now(), // Dùng để sắp xếp thứ tự danh sách cuộc chat của user đang login
-          'read': true, // Báo rằng đã đọc tin nhắn mới nhất (của cuộc chat này), chú ý cần đánh dấu cả khi mới mở cuộc chat
+          'last_time': timeNow, // Dùng để sắp xếp thứ tự danh sách cuộc chat gần nhất của user đang login
+          'seen': true, // Update, báo rằng đã đọc tin nhắn mới nhất của cuộc chat (bên user đang login)
         });
 
-        //I.2 Thêm id cuộc chat của 2 người và thông tin vào bảng 'chat_room_id' của friend
+        //I.2 Thêm thông tin vào bảng 'chat_room_id' của friend
         await firestore.collection('users').doc(userFriend['uid']).collection('chat_room_id').doc(chatRoomId).set({
           'friend_uid': firebaseAuth.currentUser?.uid,
-          'last_time': DateTime.now(), // Dùng để sắp xếp thứ tự danh sách cuộc chat của friend
-          'read': false, // Báo rằng chưa đọc tin nhắn mới nhất
+          'last_time': timeNow, // Dùng để sắp xếp thứ tự danh sách cuộc chat của friend
+          'seen': false, // Update, báo rằng chưa đọc tin nhắn mới nhất của cả cuộc chat (bên friend)
         });
 
         //II.1 Lưu vào bảng 'chatroom' chung: Thêm vào danh sách 'message' tin mới nhất
         await firestore.collection('chatroom').doc(chatRoomId).collection('message').add({
           "sendBy": firebaseAuth.currentUser?.email, // người gửi tin nhắn, xác định xem ai là người nhắn nội dung này
           'content': textMessage.text, // Nội dung tin nhắn
-          'time': DateTime.now(), // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
+          'time': timeNow, // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
         });
 
         //II.2 Update bảng 'chatroom' chung: Cập nhật thời gian sử dụng mới nhất của 'chatroom' này (cùng cấp nhưng khác 'message')
         await firestore.collection('chatroom').doc(chatRoomId).set({
           "chatroom_id": chatRoomId,
-          'last_time': DateTime.now(), // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
+          'last_time': timeNow, // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
         });
       } catch (ex) {
         print(ex);
@@ -151,6 +157,24 @@ class FirestoreController extends GetxController {
     textMessage.clear(); // clear TextField
     FocusScope.of(context).requestFocus(FocusNode()); // Đóng bàn phím
   }
+
+  //3.2 Đánh dấu đã xem cho cuộc chat: Cập nhật thông tin 'last_time', 'seen' cuộc chat đó cho user đang login
+  void seenMessage(String chatRoomId, Map<String, dynamic> userFriend, ScrollController scrollController) async {
+    try {
+      // Cập nhật cho 'chat_room_id' của user đang login (Do khi gửi friend sẽ đánh dấu cho seen là false)
+      await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(chatRoomId).update({
+        'friend_uid': userFriend['uid'],
+        'last_time': DateTime.now(), // Dùng để sắp xếp thứ tự danh sách cuộc chat gần nhất của user đang login
+        'seen': true, // Update, báo rằng đã đọc tin nhắn mới nhất của cuộc chat (bên user đang login)
+      });
+    } catch (ex) {
+      print(ex);
+    }
+
+    // Cuộn đến điểm cuối cho list tin nhắn
+    scrollListView(scrollController);
+  }
+
 
   //4. Check user in create list (So sánh bằng mapEquals)
   bool checkUserInCreateGroupList(Map<String, dynamic> user) {

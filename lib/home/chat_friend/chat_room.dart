@@ -49,7 +49,7 @@ class ChatRoom extends StatelessWidget {
   Widget listMessage() {
     return Expanded(
       child: StreamBuilder(
-        // Stream truy vấn danh sách 'message' trong bảng 'chatroom' theo id (hoặc tạo khi gửi 'message' nếu chưa có)
+        //1. Stream truy vấn danh sách 'message' trong bảng 'chatroom' theo id (hoặc tạo khi gửi 'message' nếu chưa có)
         stream: firestoreController.firestore
             .collection("chatroom")
             .doc(chatRoomId)
@@ -57,6 +57,7 @@ class ChatRoom extends StatelessWidget {
             .orderBy('time', descending: false) // descending: Sắp xếp giảm
             .snapshots(),
         builder: (context, snapshot) {
+          // Để if riêng để xử lý cập nhật stream (có thể là như vậy)
           if (snapshot.hasError) {
             return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
           }
@@ -64,15 +65,23 @@ class ChatRoom extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Danh sách tin nhắn
+          //2. Đánh dấu cuộc chat đã được đọc cho user đang login | Cuộn, position đến item tin nhắn cuối
+          // (vì khi đang mở ChatRoom là đang hoạt động trong stream nên sẽ được xử lý luôn khi có tin nhắn mới lên firestore)
+          firestoreController.seenMessage(chatRoomId, userFriend, _scrollController);
+
+          //3. Danh sách tin nhắn
           if (snapshot.hasData) {
             return ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(8),
               itemCount: snapshot.data!.docs.length, // List bởi docs của bảng 'message' trên Cloud FireStore
               itemBuilder: (context, index) {
-                QueryDocumentSnapshot query = snapshot.data!.docs[index]; // dữ liệu của 1 tin nhắn (message)
+
+                // Dữ liệu của 1 tin nhắn (message)
+                QueryDocumentSnapshot query = snapshot.data!.docs[index];
                 DateTime dateTime = query['time'].toDate(); // Lấy time theo định đạng
+
+                // Item một tin nhắn
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Column(
@@ -83,7 +92,7 @@ class ChatRoom extends StatelessWidget {
                       SizedBox(
                         width: 300,
 
-                        // Item message
+                        //4. Item mỗi message
                         child: ListTile(
                           title: Text(query['sendBy'] ?? ""), // Người gửi (Nội dung của 'sendBy' trong truy vấn)
                           subtitle: SizedBox(
@@ -116,6 +125,7 @@ class ChatRoom extends StatelessWidget {
                                   ),
                           ),
                         ),
+
                       ),
                     ],
                   ),

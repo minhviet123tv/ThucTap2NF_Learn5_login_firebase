@@ -85,18 +85,19 @@ class ChatGroupRoom extends StatelessWidget {
         // Danh sách tin nhắn
         if (snapshot.hasData) {
           return Expanded(
-            // height: MediaQuery.of(context).orientation == Orientation.portrait
-            //     ? MediaQuery.of(context).size.height * 0.84 // Màn hình dọc thì 84%
-            //     : MediaQuery.of(context).size.height * 0.66, // Màn hình ngang thì 66%
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(8),
               reverse: false,
               itemCount: snapshot.data!.docs.length,
-              // List (bởi docs) của bảng 'message_chatgroup'
+              // List message (bởi docs) của bảng 'message_chatgroup'
               itemBuilder: (context, index) {
-                QueryDocumentSnapshot query = snapshot.data!.docs[index]; // dữ liệu của 1 tin nhắn theo thứ tự index
+
+                // dữ liệu của 1 tin nhắn theo thứ tự index
+                QueryDocumentSnapshot query = snapshot.data!.docs[index];
                 DateTime dateTime = query['time'].toDate(); // Lấy time theo định đạng
+
+                // Item của một message
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Column(

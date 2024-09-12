@@ -54,8 +54,13 @@ class _HomeMainState extends State<ChatFriendMain> with TickerProviderStateMixin
               return Center(child: Icon(Icons.group_add, color: iconTabColor)); // Vẫn hiện icon khi waiting
             }
 
+            // Icon yêu cầu kết bạn gửi đến và số lượng
             return Badge(
-              label: snapshot.data!.docs.isEmpty ? const SizedBox() : snapshot.data!.docs.length > 99 ? const Text('99+') : Text('${snapshot.data!.docs.length}'),
+              label: snapshot.data!.docs.isEmpty
+                  ? const SizedBox()
+                  : snapshot.data!.docs.length > 99
+                      ? const Text('99+')
+                      : Text('${snapshot.data!.docs.length}'), // Đặt số lượng phù hợp
               backgroundColor: snapshot.data!.docs.isEmpty ? Colors.transparent : Colors.red,
               child: Icon(Icons.group_add, color: iconTabColor),
             );
@@ -64,8 +69,40 @@ class _HomeMainState extends State<ChatFriendMain> with TickerProviderStateMixin
       ),
       //3. Icon danh sách bạn bè
       Tab(text: "Tab 3", icon: Icon(Icons.group_rounded, color: iconTabColor)),
-      //4. Icon danh sách các cuộc chat
-      Tab(text: "Tab 4", icon: Icon(Icons.chat_bubble_outline, color: iconTabColor)),
+      //4. Icon danh sách các cuộc chat, báo số lượng cuộc chat chưa check
+      Tab(
+        text: "Tab 4",
+        // Lấy số lượng cuộc chat chưa 'seen' cho user đang login
+        icon: StreamBuilder(
+          stream: firestoreController.firestore
+              .collection('users')
+              .doc(firestoreController.firebaseAuth.currentUser?.uid)
+              .collection('chat_room_id')
+              .where('seen', isEqualTo: false) // Chưa 'seen'
+              .snapshots(),
+          builder: (context, snapshotSeen) {
+            // Luôn cần xử lý các trường hợp 'hasError' và 'waiting' nếu không có thể hay xảy ra lỗi
+            if (snapshotSeen.hasError) {
+              return const Center(child: Text("Error", style: TextStyle(fontSize: 20)));
+            }
+
+            if (snapshotSeen.connectionState == ConnectionState.waiting) {
+              return Center(child: Icon(Icons.chat_bubble_outline, color: iconTabColor)); // Vẫn hiện icon đó khi waiting
+            }
+
+            // Icon các cuộc chat với bạn bè và số lượng cuộc chat có tin nhắn mới nhưng chưa xem
+            return Badge(
+              label: snapshotSeen.data!.docs.isEmpty
+                  ? const SizedBox()
+                  : snapshotSeen.data!.docs.length > 99
+                      ? const Text('99+')
+                      : Text('${snapshotSeen.data!.docs.length}'), // Đặt số lượng phù hợp
+              backgroundColor: snapshotSeen.data!.docs.isEmpty ? Colors.transparent : Colors.red,
+              child: Icon(Icons.chat_bubble_outline, color: iconTabColor),
+            );
+          },
+        ),
+      ),
     ];
 
     //II. Dữ liệu controller, index khi mới mở | (with TickerProviderStateMixin cho class)
