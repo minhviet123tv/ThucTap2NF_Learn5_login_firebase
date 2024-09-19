@@ -1,5 +1,14 @@
 https://firebase.google.com/docs/firestore/query-data/get-data
 
+
+// Tóm tắt các lệnh và sự khác nhau
+1. Dùng .get():
+- Dùng cho Widget: Nếu get() sau doc(id) -> .doc(id).get() -> Lấy dữ liệu dạng Future của một id (là 1 Map)
+- Dùng để xử lý bằng logic -> Tạo .get().then((value){}); -> Trước get() có thể là .collection() hoặc .doc(id) -> value sẽ là dạng list hoặc 1 map
+2. Dùng snapshot:
+- Đặt trong stream của StreamBuilder, chỉ dùng cho .collection(), có thể có where
+
+
 // Cách 1: Truy vấn cho Widget -> Dùng Stream
 final Stream<QuerySnapshot> queryListUser = FirebaseFirestore.instance.collection("users").snapshots(); // list user firestore
 -> Dùng StreamBuilder để lấy dữ liệu cho từng item trong snapshot
@@ -25,35 +34,3 @@ firestore.collection("cities").where("capital", isEqualTo: true).get().then(
      onError: (e) => print("Error QuerySnapshot: $e"),
    );
 
-
-// Lấy danh sách chat group của 1 user bằng cách truy vấn từ 'chatgroup'
-StreamBuilder(
-  // Truy vấn tất cả 'chatgroup' -> Lấy id -> Truy vấn tiếp
-  stream: firestoreController.firestore.collection('chatgroup').snapshots(), // Danh sách 'chatgroup'
-  builder: (context, snapshot) {
-    if (snapshot.hasError) {
-      return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
-    } else if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return ListView.builder(
-      itemCount: snapshot.data?.docs.length,
-      itemBuilder: (context, index) {
-        return FutureBuilder(
-          future: firestoreController.checkIdChatGroupForUser(snapshot.data!.docs[index].id),
-          builder: (context, snapshot2) {
-            // Hiển thị nếu có kết quả check id (và chứa uid của user đang login - true)
-            if(snapshot2.hasData){
-              if(snapshot2.data == true){
-                return Card(
-                  child: Text("${snapshot.data?.docs[index]['groupName']}"),
-                );
-              }
-            }
-            return SizedBox();
-          },
-        );
-      },
-    );
-  },
-),

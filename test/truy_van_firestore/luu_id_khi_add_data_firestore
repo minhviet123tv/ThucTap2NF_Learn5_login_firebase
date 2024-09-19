@@ -20,8 +20,6 @@
 
 }
 
-
-
 //II. Lấy id nếu có, lưu id nếu chưa có (mới chat, mới tạo)
 String idFromFirestore = "";
 await firestore.collection("chatroom").doc(chatRoomId).get().then(

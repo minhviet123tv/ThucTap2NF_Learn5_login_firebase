@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../custom_widget/listtile_custom.dart';
 
 /*
 Home page sử dụng FireStore
@@ -21,7 +24,6 @@ class FriendList extends StatelessWidget {
           children: [
             //I. TextField tìm kiếm user theo email
             GetBuilder<FirestoreController>(builder: (controller) => findUserFollowEmail(context)),
-            const SizedBox(height: 10),
 
             //II. Kết quả tìm kiếm
             GetBuilder<FirestoreController>(builder: (controller) => findUserResult()),
@@ -70,91 +72,37 @@ class FriendList extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: StreamBuilder(
-            // Truy vấn tất cả friend trong 'my_friends' của user đang login
+            //1. Truy vấn tất cả friend trong 'my_friends' của user đang login
             stream: firestoreController.firestore
                 .collection("users")
                 .doc(firestoreController.firebaseAuth.currentUser?.uid)
                 .collection('my_friends')
                 .where('email', isGreaterThanOrEqualTo: textSearch.text)
                 .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
+            builder: (context, streamMyFriendList) {
+              if (streamMyFriendList.hasError) {
                 return const Center(child: Text("hasError: Somethings went wrong"));
               }
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (streamMyFriendList.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 );
               }
 
-              // Danh sách tất cả friend
-              return snapshot.data!.docs.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
-                      itemBuilder: (context, index) {
-                        return InkWell(
-                          // Go to chat room with friend
-                          onTap: () => firestoreController.goToChatRoomWithFriend({
-                            'email': snapshot.data?.docs[index]['email'],
-                            'uid': snapshot.data?.docs[index]['uid'],
-                          }),
-                          child: Card(
-                            color: Colors.grey[200],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          snapshot.data?.docs[index]['email'],
-                                          style: const TextStyle(fontWeight: FontWeight.w700),
-                                        ),
-                                        Text(snapshot.data?.docs[index]['uid']),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {},
-                                        icon: const Icon(Icons.account_circle_outlined),
-                                        style: const ButtonStyle(
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          // Go to chat room
-                                          firestoreController.goToChatRoomWithFriend({
-                                            'email': snapshot.data?.docs[index]['email'],
-                                            'uid': snapshot.data?.docs[index]['uid'],
-                                          });
-                                        },
-                                        icon: const Icon(Icons.message_rounded),
-                                        style: const ButtonStyle(
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        "No result by \"${textSearch.text}\"",
-                        style: const TextStyle(fontSize: 16, color: Colors.black54),
-                      ),
-                    );
+              //2. Danh sách tất cả friend (Nếu có ít nhất 1 friend)
+              if (streamMyFriendList.data!.docs.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: streamMyFriendList.data?.docs.length, // Danh sách docs truy vấn được
+                  itemBuilder: (context, index) {
+                    return itemFriend(streamMyFriendList, index);
+                  },
+                );
+              }
+
+              //3. Trả về khi mặc định
+              return Center(
+                child: Text("No result by \"${textSearch.text}\"", style: const TextStyle(fontSize: 16, color: Colors.black54)),
+              );
             },
           ),
         ),
@@ -169,9 +117,12 @@ class FriendList extends StatelessWidget {
     if (textSearch.text.isEmpty) {
       return Expanded(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.only(
+            left: 8.0,
+            right: 8.0,
+          ),
           child: StreamBuilder(
-            // Truy vấn tất cả friend trong 'my_friends' của user đang login
+            //1. Truy vấn tất cả friend trong 'my_friends' của user đang login
             stream: firestoreController.firestore
                 .collection("users")
                 .doc(firestoreController.firebaseAuth.currentUser?.uid)
@@ -183,79 +134,21 @@ class FriendList extends StatelessWidget {
                 return const Center(child: Text("hasError: Somethings went wrong"));
               }
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(),
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              //2. Danh sách tất cả friend (Nếu có ít nhất 1 friend)
+              if (snapshot.data!.docs.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
+                  itemBuilder: (context, index) {
+                    return itemFriend(snapshot, index); // item
+                  },
                 );
               }
 
-              // Danh sách tất cả friend
-              return snapshot.data!.docs.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: snapshot.data?.docs.length, // Danh sách docs truy vấn được
-                      itemBuilder: (context, index) {
-                        return InkWell(
-                          // Go to chat room with friend
-                          onTap: () => firestoreController.goToChatRoomWithFriend({
-                            'email': snapshot.data?.docs[index]['email'],
-                            'uid': snapshot.data?.docs[index]['uid'],
-                          }),
-                          child: Card(
-                            color: Colors.grey[200],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          snapshot.data?.docs[index]['email'],
-                                          style: const TextStyle(fontWeight: FontWeight.w700),
-                                        ),
-                                        Text(snapshot.data?.docs[index]['uid']),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {},
-                                        icon: const Icon(Icons.account_circle_outlined),
-                                        style: const ButtonStyle(
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          // Go to chat room
-                                          firestoreController.goToChatRoomWithFriend({
-                                            'email': snapshot.data?.docs[index]['email'],
-                                            'uid': snapshot.data?.docs[index]['uid'],
-                                          });
-                                        },
-                                        icon: const Icon(Icons.message_rounded),
-                                        style: const ButtonStyle(
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : const Center(
-                      child: Text(
-                        "No friends yet.",
-                        style: TextStyle(fontSize: 16, color: Colors.black54),
-                      ),
-                    );
+              //3. Thông báo mặc định các trường hợp khác
+              return const Center(child: Text("No friends yet.", style: TextStyle(fontSize: 16, color: Colors.black54)));
             },
           ),
         ),
@@ -263,5 +156,37 @@ class FriendList extends StatelessWidget {
     } else {
       return const SizedBox();
     }
+  }
+
+  //IV. Item Friend
+  itemFriend(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot, int index) {
+    return Padding(
+      padding: index == 0
+          ? const EdgeInsets.only(top: 8.0)
+          : index == snapshot.data!.docs.length - 1
+              ? const EdgeInsets.only(bottom: 12.0)
+              : const EdgeInsets.only(top: 0.0),
+      child: ListTileCustom(
+        textTitle: snapshot.data?.docs[index]['email'],
+        textSubTitle: snapshot.data?.docs[index]['uid'],
+        iconTopTrailing: const Icon(Icons.account_circle_outlined),
+        functionTopTrailingIcon: () {
+          null;
+        },
+        iconBottomTrailing: const Icon(Icons.message_rounded),
+        functionBottomTrailingIcon: () {
+          firestoreController.goToChatRoomWithFriend({
+            'email': snapshot.data?.docs[index]['email'],
+            'uid': snapshot.data?.docs[index]['uid'],
+          });
+        },
+        onTap: () {
+          firestoreController.goToChatRoomWithFriend({
+            'email': snapshot.data?.docs[index]['email'],
+            'uid': snapshot.data?.docs[index]['uid'],
+          });
+        },
+      ),
+    );
   }
 }

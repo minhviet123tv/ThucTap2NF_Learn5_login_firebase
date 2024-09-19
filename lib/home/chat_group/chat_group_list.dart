@@ -44,7 +44,7 @@ class ChatGroup extends StatelessWidget {
       child: GetBuilder<FirestoreController>(
         builder: (controller) {
           return StreamBuilder(
-            //1. Truy vấn 'users' lấy danh sách 'chat_group_id' của user đang login -> Truy vấn sang bảng 'chatgroup'
+            //1.1 Truy vấn 'users' lấy danh sách 'chat_group_id' của user đang login -> Truy vấn sang bảng 'chatgroup'
             stream: firestoreController.firestore
                 .collection('users')
                 .doc(firestoreController.firebaseAuth.currentUser?.uid)
@@ -58,7 +58,7 @@ class ChatGroup extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              // Danh sách các cuộc chat, hiện text thông báo nếu chưa có cuộc chat group nào
+              //1.2 Danh sách các cuộc chat, hiện text thông báo nếu chưa có cuộc chat group nào
               return snapshotId.data!.docs.isNotEmpty
                   ? ListView.builder(
                       itemCount: snapshotId.data?.docs.length,

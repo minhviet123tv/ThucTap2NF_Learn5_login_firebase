@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
     textEmail.text = userController.email.value;
   }
 
-  // Khung trang
+  //D. Khung trang
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           child: GestureDetector(
-            onTap: ()=> FocusManager.instance.primaryFocus?.unfocus(),
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             child: SingleChildScrollView(
               child: GetBuilder<UserController>(
                 builder: (controller) {
@@ -113,106 +113,122 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           children: [
             //1. Email
-            TextFieldLoginRegister(
-              textControl: textEmail,
-              onChanged: (value) {
-                userController.email.value = value; // Cập nhật giá trị
-              },
-              maxLength: null,
-              keyboardType: TextInputType.emailAddress,
-              hintText: 'Email',
-              prefixIcon: const Icon(Icons.email_outlined),
-              obscureText: false,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
+            textFieldEmail(),
+            const SizedBox(height: 10),
 
             //2. TextField password
-            TextFieldLoginRegister(
-              onChanged: (value) {
-                userController.password.value = value; // Cập nhật giá trị
-              },
-              maxLength: null,
-              keyboardType: TextInputType.visiblePassword,
-              hintText: "Password",
-              prefixIcon: const Icon(Icons.lock),
-              obscureText: true,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
+            textFieldPassword(),
+            const SizedBox(height: 10),
 
             //3. TextField confirm password
-            if (userController.uiLoginState == UILoginState.signup)
-              GetBuilder<UserController>(
-                builder: (controller) {
-                  return TextFieldLoginRegister(
-                    onChanged: (value) {
-                      userController.passwordConfirm.value = value; // Cập nhật giá trị
-                    },
-                    maxLength: null,
-                    keyboardType: TextInputType.visiblePassword,
-                    hintText: "Confirm Password",
-                    prefixIcon: const Icon(Icons.lock),
-                    obscureText: true,
-                  );
-                },
-              ),
-            const SizedBox(
-              height: 10,
-            ),
+            if (userController.uiLoginState == UILoginState.signup) textFieldConfirmPassword(),
+            const SizedBox(height: 10),
 
             //4. Button login & signup (Ghép nút)
             (userController.loadingPage != LoadingPage.signIn && userController.loadingPage != LoadingPage.signUp)
-                ? GetBuilder<UserController>(
-                    builder: (controller) {
-                      return ElevatedButton(
-                        onPressed: () {
-                          if (userController.uiLoginState == UILoginState.login) {
-                            userController.signInAppChat(context, LoadingPage.signIn); // Xử lý bấm LOGIN
-                          } else {
-                            userController.signUpAppChat(context, LoadingPage.signUp); // Xử lý khi bấm nút SIGNUP
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4201FF), //4201FFFF -> 0xFF 4201FF (chuyển đuôi FF vào đầu 0x => 0xFF)
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                        ),
-                        child: Text(
-                          userController.uiLoginState == UILoginState.login ? 'LOGIN' : 'SIGN UP',
-                          style: const TextStyle(color: Colors.white, fontFamily: "KlarnaText"),
-                        ),
-                      );
-                    },
-                  )
+                ? buttonLoginAndSignUp()
                 : const CircularProgressIndicator(),
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
 
             //5. Chuyển đổi UI sang LOGIN hoặc SIGNUP
-            GetBuilder<UserController>(
-              builder: (controller) {
-                return TextButton(
-                  onPressed: () {
-                    userController.switchLoginState(); // Cập nhật giao diện
-                  },
-                  child: Text(
-                    '${userController.uiLoginState == UILoginState.login ? 'SIGNUP' : 'LOGIN'} PAGE',
-                    style: const TextStyle(
-                      fontFamily: "KlarnaText",
-                      color: Color(0xFF4201FF),
-                    ),
-                  ),
-                );
-              },
-            ),
+            textButtonSwitchSignUpAndLogin(),
           ],
         ),
       ),
+    );
+  }
+
+  //1. TextField Email
+  textFieldEmail() {
+    return TextFieldLoginRegister(
+      textControl: textEmail,
+      onChanged: (value) {
+        userController.email.value = value; // Cập nhật giá trị
+      },
+      maxLength: null,
+      keyboardType: TextInputType.emailAddress,
+      hintText: 'Email',
+      prefixIcon: const Icon(Icons.email_outlined),
+      obscureText: false,
+    );
+  }
+
+  //2. TextField Password
+  textFieldPassword() {
+    return TextFieldLoginRegister(
+      onChanged: (value) {
+        userController.password.value = value; // Cập nhật giá trị
+      },
+      maxLength: null,
+      keyboardType: TextInputType.visiblePassword,
+      hintText: "Password",
+      prefixIcon: const Icon(Icons.lock),
+      obscureText: true,
+    );
+  }
+
+  //3. TextField Confirm Password
+  textFieldConfirmPassword() {
+    return GetBuilder<UserController>(
+      builder: (controller) {
+        return TextFieldLoginRegister(
+          onChanged: (value) {
+            userController.passwordConfirm.value = value; // Cập nhật giá trị
+          },
+          maxLength: null,
+          keyboardType: TextInputType.visiblePassword,
+          hintText: "Confirm Password",
+          prefixIcon: const Icon(Icons.lock),
+          obscureText: true,
+        );
+      },
+    );
+  }
+
+  //4. Button Login And SignUp
+  buttonLoginAndSignUp() {
+    return GetBuilder<UserController>(
+      builder: (controller) {
+        return ElevatedButton(
+          onPressed: () {
+            if (userController.uiLoginState == UILoginState.login) {
+              userController.signInAppChat(context, LoadingPage.signIn); // Xử lý bấm LOGIN
+            } else {
+              userController.signUpAppChat(context, LoadingPage.signUp); // Xử lý khi bấm nút SIGNUP
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF4201FF), //4201FFFF -> 0xFF 4201FF (chuyển đuôi FF vào đầu 0x => 0xFF)
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20)),
+            ),
+          ),
+          child: Text(
+            userController.uiLoginState == UILoginState.login ? 'LOGIN' : 'SIGN UP',
+            style: const TextStyle(color: Colors.white, fontFamily: "KlarnaText"),
+          ),
+        );
+      },
+    );
+  }
+
+  //5. TextButton Switch SignUp And Login
+  textButtonSwitchSignUpAndLogin() {
+    return GetBuilder<UserController>(
+      builder: (controller) {
+        return TextButton(
+          onPressed: () {
+            userController.switchLoginState(); // Cập nhật giao diện
+          },
+          child: Text(
+            '${userController.uiLoginState == UILoginState.login ? 'SIGNUP' : 'LOGIN'} PAGE',
+            style: const TextStyle(
+              fontFamily: "KlarnaText",
+              color: Color(0xFF4201FF),
+            ),
+          ),
+        );
+      },
     );
   }
 }

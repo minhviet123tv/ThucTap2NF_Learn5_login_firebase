@@ -43,6 +43,7 @@ dependencies:
 
   firebase_database: ^11.0.4 # Realtime firebase database
   cloud_firestore: ^5.2.1 # Firebase FireStore (Clound)
+  http: ^0.13.4
 
 dev_dependencies:
   flutter_test:

@@ -29,47 +29,57 @@ class OtpScreen extends StatelessWidget {
         title: const Text("Confirm OTP"),
         centerTitle: true,
       ),
-      body: GetBuilder<UserController>(
-        builder: (controller) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  //I. Ảnh minh hoạ
-                  Image.asset('assets/images/verify_phone_number.png', width: 200),
-                  const SizedBox(height: 20),
-
-                  //II. Nhập mã OTP
-                  OtpTextField(
-                    numberOfFields: 6,
-                    styles: textStyleOTP,
-                    autoFocus: true,
-                    showFieldAsBox: false,
-                    borderWidth: 3.0,
-                    borderRadius: BorderRadius.circular(10),
-                    focusedBorderColor: Colors.red,
-                    enabledBorderColor: Colors.green,
-                    onSubmit: (value) {
-                      // Sau khi điền xong, đầy các ô -> Xác thực OTP | value: giá trị toàn bộ OTP các ô của OtpTextField
-                      controller.verifyOTP(value, loadingPage);
-                      textConfirmOtp = value; // Cập nhật mã ở UI để dùng lại
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  //III. Hàng nút điều khiển
-                  buttonControlOTP(),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+      body: otpScreenBody(),
     );
   }
 
-  // Button Control OTP
+  //I. Otp Screen Body
+  otpScreenBody() {
+    return GetBuilder<UserController>(
+      builder: (controller) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                //I. Ảnh minh hoạ
+                Image.asset('assets/images/verify_phone_number.png', width: 200),
+                const SizedBox(height: 20),
+
+                //II. Nhập mã OTP
+                inputOtpTextField(),
+                const SizedBox(height: 20),
+
+                //III. Hàng nút điều khiển
+                buttonControlOTP(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  //II. Input Otp TextField
+  inputOtpTextField() {
+    return OtpTextField(
+      numberOfFields: 6,
+      styles: textStyleOTP,
+      autoFocus: true,
+      showFieldAsBox: false,
+      borderWidth: 3.0,
+      borderRadius: BorderRadius.circular(10),
+      focusedBorderColor: Colors.red,
+      enabledBorderColor: Colors.green,
+      onSubmit: (value) {
+        // Khi điền đầy các ô -> Xác thực OTP (value: giá trị toàn bộ OTP các ô của OtpTextField)
+        userController.verifyOTP(value, loadingPage);
+        textConfirmOtp = value; // Cập nhật mã ở UI để dùng lại
+      },
+    );
+  }
+
+  //III. Button Control OTP
   Widget buttonControlOTP() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

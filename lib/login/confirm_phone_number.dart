@@ -28,6 +28,7 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
     userController.countryCode.value = textCountryCode.text;
   }
 
+  // Trang
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,27 +36,32 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
         title: const Text("Verify Phone Number"),
         centerTitle: true,
       ),
-      body: GestureDetector(
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  //1. Ảnh minh hoạ
-                  imagePhone(),
-                  const SizedBox(height: 20),
+      body: bodyConfirmPhoneNumber(),
+    );
+  }
 
-                  //2. Ô nhập số điện thoại
-                  typePhoneNumber(),
-                  const SizedBox(height: 10),
+  //I. Body Confirm Phone Number
+  bodyConfirmPhoneNumber() {
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                //1. Ảnh minh hoạ
+                imagePhone(),
+                const SizedBox(height: 20),
 
-                  //3. Nút bấm xác nhận, thực hiện xác thực số điện thoại -> Chuyển đến xác nhận OTP
-                  buttonVerifyPhoneNumber(),
-                ],
-              ),
+                //2. Ô nhập số điện thoại
+                typePhoneNumber(),
+                const SizedBox(height: 10),
+
+                //3. Nút bấm xác nhận, thực hiện xác thực số điện thoại -> Chuyển đến xác nhận OTP
+                buttonVerifyPhoneNumber(),
+              ],
             ),
           ),
         ),
@@ -63,7 +69,7 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
     );
   }
 
-  //1. image Phone
+  //I.1 image Phone
   Widget imagePhone() {
     return Image.asset(
       'assets/images/verify_phone_number.png',
@@ -71,7 +77,7 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
     );
   }
 
-  //2. Type PhoneNumber
+  //I.2 Type PhoneNumber
   Widget typePhoneNumber() {
     return Container(
       height: 55,
@@ -121,7 +127,7 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
     );
   }
 
-  //3. Button Verify Phone Number
+  //I.3 Button Verify Phone Number
   Widget buttonVerifyPhoneNumber() {
     return userController.loadingPage != widget.loadingPage
         ? ElevatedButton(
@@ -138,4 +144,6 @@ class _ConfirmPhoneNumberState extends State<ConfirmPhoneNumber> {
     )
         : const CircularProgressIndicator();
   }
+
+
 }
