@@ -8,6 +8,11 @@ https://firebase.google.com/docs/firestore/query-data/get-data
 2. Dùng snapshot:
 - Đặt trong stream của StreamBuilder, chỉ dùng cho .collection(), có thể có where
 
+3.* Cập nhật tất cả field chung của danh sách (Sau khi query get() được danh sách):
+ querySnapshot.docs[i].reference.update("key":value);
+ hoặc kiểu: forEach((element)=> element.reference.update({"key1": value1, "key2": value}));
+
+
 
 // Cách 1: Truy vấn cho Widget -> Dùng Stream
 final Stream<QuerySnapshot> queryListUser = FirebaseFirestore.instance.collection("users").snapshots(); // list user firestore

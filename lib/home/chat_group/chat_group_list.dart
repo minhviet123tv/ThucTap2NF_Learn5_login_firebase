@@ -37,10 +37,10 @@ class ChatGroup extends StatelessWidget {
     );
   }
 
-  // Danh sách các chat group của user đang login
+  //I. Danh sách chat group của user đang login
   Widget listChatGroup() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: GetBuilder<FirestoreController>(
         builder: (controller) {
           return StreamBuilder(
@@ -49,87 +49,118 @@ class ChatGroup extends StatelessWidget {
                 .collection('users')
                 .doc(firestoreController.firebaseAuth.currentUser?.uid)
                 .collection('chat_group_id')
+                .orderBy('last_time', descending: true) // Sắp xếp giảm theo thời gian lưu ở 'chat_group_id' mỗi user
                 .snapshots(),
-            builder: (context, snapshotId) {
-              if (snapshotId.hasError) {
+            builder: (context, streamChatGroupId) {
+              if (streamChatGroupId.hasError) {
                 return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
               }
-              if (snapshotId.connectionState == ConnectionState.waiting) {
+              if (streamChatGroupId.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              //1.2 Danh sách các cuộc chat, hiện text thông báo nếu chưa có cuộc chat group nào
-              return snapshotId.data!.docs.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: snapshotId.data?.docs.length,
-                      itemBuilder: (context, index) {
-                        return StreamBuilder(
-                          //2. Truy vấn thông tin của 'chatgroup' room theo id của stream phía trên trước đó
-                          stream:
-                              firestoreController.firestore.collection('chatgroup').doc(snapshotId.data?.docs[index].id).snapshots(),
-                          builder: (context, snapshotGroup) {
-                            if (snapshotGroup.hasError) {
-                              return const Center(child: Text("Somethings went wrong!", style: TextStyle(fontSize: 20)));
-                            }
-                            if (snapshotGroup.connectionState == ConnectionState.waiting) {
-                              return const Center(child: SizedBox());
-                            }
+              //1.2 Danh sách các cuộc chat khi có dữ liệu
+              if (streamChatGroupId.hasData && streamChatGroupId.data!.docs.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: streamChatGroupId.data?.docs.length,
+                  itemBuilder: (context, index) {
+                    // Widget item
+                    return itemChatGroup(streamChatGroupId, index);
+                  },
+                );
+              }
 
-                            //3. Hiển thị thông tin group chat và tin nhắn cuối, thời gian của tin nhắn cuối
-                            return StreamBuilder(
-                              stream: firestoreController.firestore
-                                  .collection('chatgroup')
-                                  .doc(snapshotId.data?.docs[index].id)
-                                  .collection('message_chatgroup')
-                                  .orderBy('time', descending: true)
-                                  .snapshots(),
-                              builder: (context, snapshotMessage) {
-                                if (snapshotMessage.hasError) {
-                                  return const Center(child: Text("Somethings went wrong!", style: TextStyle(fontSize: 20)));
-                                }
-                                if (snapshotMessage.connectionState == ConnectionState.waiting) {
-                                  return const Center(child: Text(""));
-                                }
-
-                                // Trả về khi có data và có tin nhắn trong 'chatgroup'
-                                if (snapshotMessage.data!.docs.isNotEmpty) {
-                                  QueryDocumentSnapshot query = snapshotMessage.data!.docs[0]; // dữ liệu tin nhắn cuối
-                                  DateTime dateTime = query['time'].toDate(); // Lấy time theo định đạng
-                                  return Card(
-                                    color: Colors.green[100],
-                                    child: ListTile(
-                                      title: Text(
-                                        "${snapshotGroup.data?['groupName']}",
-                                        style: const TextStyle(fontWeight: FontWeight.w500),
-                                      ),
-                                      subtitle: Text(query['content'].toString()),
-                                      trailing: dateTime.minute >= 10
-                                          ? Text("${dateTime.hour}:${dateTime.minute}")
-                                          : Text("${dateTime.hour}:0${dateTime.minute}"),
-
-                                      //4. Vào chat group khi click (với id trong danh sách 'chat_group_id' đã truy vấn)
-                                      onTap: () => Get.to(() => ChatGroupRoom(
-                                            idChatGroupRoom: snapshotId.data!.docs[index].id,
-                                            isCreateGroup: false,
-                                          )),
-                                    ),
-                                  );
-                                }
-
-                                return const SizedBox();
-                              },
-                            );
-                          },
-                        );
-                      },
-                    )
-                  : const Center(
-                      child: Text("You don't have any group chats yet.", style: TextStyle(fontSize: 16, color: Colors.black54)),
-                    );
+              // Thông báo nếu chưa có cuộc chat group nào
+              return const Center(
+                child: Text("You don't have any group chats yet.", style: TextStyle(fontSize: 16, color: Colors.black54)),
+              );
             },
           );
         },
       ),
     );
+  }
+
+  //II. Item ChatGroup
+  Widget itemChatGroup(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamChatGroupId, int index) {
+    //1. Truy vấn FutureBuilder lên bảng chung 'chatgroup' để lấy dữ liệu của mỗi một cuộc chat
+    if (streamChatGroupId.hasData && streamChatGroupId.data!.docs.isNotEmpty) {
+      return FutureBuilder(
+        future: firestoreController.firestore.collection('chatgroup').doc(streamChatGroupId.data!.docs[index].id).get(),
+        builder: (context, futureOneChatGroup) {
+          if (futureOneChatGroup.hasError) {
+            return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
+          }
+          if (futureOneChatGroup.connectionState == ConnectionState.waiting) {
+            return const SizedBox();
+          }
+
+          //2. Nếu có dữ liệu -> Trả về item (Luôn cần kiểm tra điều kiện để tránh lỗi)
+          if (futureOneChatGroup.hasData) {
+            // Lấy time cuối của 1 cuộc chat đã lưu ở mỗi user (định đạng để sử dụng)
+            DateTime dateTime = streamChatGroupId.data?.docs[index]['last_time'].toDate();
+            return Card(
+              color: Colors.green[100],
+              child: ListTile(
+                //a. Tên group (ở bảng 'chatgroup' chung)
+                title: Text(
+                  "${futureOneChatGroup.data?['group_name']}", // Chú ý lấy đúng stream hay future
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+
+                //b. Nội dung tin nhắn cuối (ở bảng 'chatgroup' chung)
+                subtitle: Text(
+                  futureOneChatGroup.data?['last_content'],
+                  style: const TextStyle(color: Colors.black),
+                ),
+
+                //c. Số lượng tin mới và thời gian tin nhắn cuối của mỗi user (stream bảng 'chat_group_id' của mỗi user)
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    //a. Số lượng tin nhắn mới (Nếu có)
+                    if (streamChatGroupId.data?.docs[index]['new_message'] > 0)
+                      Badge(
+                        label: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
+                          child: () {
+                            if (streamChatGroupId.data?.docs[index]['new_message'] > 99) {
+                              return const Text(
+                                '99+',
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                              );
+                            } else {
+                              return Text(
+                                '${streamChatGroupId.data?.docs[index]['new_message']}',
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                              );
+                            }
+                          }(),
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    const SizedBox(height: 5),
+
+                    //d. Thời gian của tin nhắn cuối
+                    dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}")
+                  ],
+                ),
+
+                //3. Vào chat group khi click (với id trong danh sách 'chat_group_id' đã truy vấn)
+                onTap: () => Get.to(() => ChatGroupRoom(
+                      idChatGroupRoom: streamChatGroupId.data!.docs[index].id,
+                      isCreateGroup: false, // Báo trạng thái sử dụng
+                    )),
+              ),
+            );
+          }
+
+          //4. Trả về mặc định
+          return const SizedBox();
+        },
+      );
+    } else {
+      return const SizedBox();
+    }
   }
 }

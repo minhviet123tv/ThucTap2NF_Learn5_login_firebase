@@ -62,7 +62,7 @@ class _HomeMainState extends State<HomeMain> {
             //2. Chat với bạn bè + Thông báo số lượng tin nhắn mới và kết bạn mới
             BottomNavigationBarItem(label: "Friend", icon: streamIconChatWithFriend()),
             //3. Chat group
-            BottomNavigationBarItem(icon: Icon(Icons.groups_outlined, color: menuIconColor), label: "Group"),
+            BottomNavigationBarItem(icon: streamIconChatGroup(), label: "Group"),
             //4. Profile current user
             BottomNavigationBarItem(icon: Icon(Icons.account_circle_outlined, color: menuIconColor), label: "Account"),
           ],
@@ -83,11 +83,11 @@ class _HomeMainState extends State<HomeMain> {
       builder: (context, streamFriendRequest) {
         // Luôn cần xử lý các trường hợp 'hasError' và 'waiting' nếu không có thể hay xảy ra lỗi
         if (streamFriendRequest.hasError) {
-          return const Center(child: Text("Error", style: TextStyle(fontSize: 20)));
+          return Icon(Icons.chat, color: menuIconColor); // Vẫn hiện icon
         }
 
         if (streamFriendRequest.connectionState == ConnectionState.waiting) {
-          return Center(child: Icon(Icons.chat, color: menuIconColor)); // Vẫn hiện icon khi waiting
+          return Icon(Icons.chat, color: menuIconColor); // Vẫn hiện icon khi waiting
         }
 
         //1.2 Nếu có dữ liệu và có số lượng yêu cầu kết bạn gửi đến
@@ -102,11 +102,11 @@ class _HomeMainState extends State<HomeMain> {
                 .snapshots(),
             builder: (context, streamChatRoomWithFriend) {
               if (streamChatRoomWithFriend.hasError) {
-                return Center(child: Icon(Icons.chat, color: menuIconColor));
+                return Icon(Icons.chat, color: menuIconColor);
               }
 
               if (streamChatRoomWithFriend.connectionState == ConnectionState.waiting) {
-                return Center(child: Icon(Icons.chat, color: menuIconColor)); // Vẫn hiện icon khi waiting
+                return Icon(Icons.chat, color: menuIconColor); // Vẫn hiện icon khi waiting
               }
 
               //2.2 Nếu có dữ liệu và có số lượng cuộc chat chưa 'seen' -> Cộng vào số lượng với số lượng kết bạn
@@ -136,7 +136,7 @@ class _HomeMainState extends State<HomeMain> {
             },
           );
         } else {
-          //4.1 Khi không có số lượng yêu cầu kết bạn -> Kiểm tra số lượng tin nhắn mới (cuộc chat chưa 'seen')
+          //4.1 Khi không có số lượng yêu cầu kết bạn -> Chỉ kiểm tra số lượng tin nhắn mới (cuộc chat chưa 'seen')
           return StreamBuilder(
             stream: firestoreController.firestore
                 .collection('users')
@@ -156,8 +156,11 @@ class _HomeMainState extends State<HomeMain> {
               //4.2 Nếu có dữ liệu và có số lượng tin nhắn mới (điều kiện cần và đủ) -> Hiển thị số lượng cuộc chat chưa 'seen'
               if (streamChatRoomWithFriend.hasData && streamChatRoomWithFriend.data!.docs.isNotEmpty) {
                 return Badge(
-                  label: Text(streamChatRoomWithFriend.data!.docs.length.toString()), // số lượng tin nhắn mới
-                  backgroundColor: streamChatRoomWithFriend.data!.docs.isEmpty ? Colors.transparent : Colors.purpleAccent,
+                  label: Text(
+                    streamChatRoomWithFriend.data!.docs.length > 99 ? "99+" : streamChatRoomWithFriend.data!.docs.length.toString(),
+                  ),
+                  // số lượng tin nhắn mới
+                  backgroundColor: streamChatRoomWithFriend.data!.docs.isEmpty ? Colors.transparent : Colors.green,
                   child: Icon(Icons.chat, color: menuIconColor),
                 );
               }
@@ -167,6 +170,41 @@ class _HomeMainState extends State<HomeMain> {
             },
           );
         }
+      },
+    );
+  }
+
+  // Stream icon chat group
+  streamIconChatGroup() {
+    return StreamBuilder(
+      //1.1 Truy vấn lấy những cuộc chat group có tin nhắn mới (chưa 'seen') trong danh sách 'chat_group_id' của user đang login
+      stream: firestoreController.firestore
+          .collection('users')
+          .doc(firestoreController.firebaseAuth.currentUser?.uid)
+          .collection('chat_group_id')
+          .where('seen', isEqualTo: false)
+          .snapshots(),
+      builder: (context, streamListInfoGroup) {
+        // Luôn cần xử lý các trường hợp 'hasError' và 'waiting' nếu không có thể hay xảy ra lỗi
+        if (streamListInfoGroup.hasError) {
+          return Icon(Icons.groups, color: menuIconColor); // Vẫn hiện icon khi error
+        }
+
+        if (streamListInfoGroup.connectionState == ConnectionState.waiting) {
+          return Icon(Icons.groups, color: menuIconColor); // Vẫn hiện icon khi waiting
+        }
+
+        //1.2 Nếu có dữ liệu và có số lượng cuộc chat -> Lấy số lượng cuộc chat có tin mới
+        if (streamListInfoGroup.hasData && streamListInfoGroup.data!.docs.isNotEmpty) {
+          return Badge(
+            label: Text(streamListInfoGroup.data!.docs.length > 99 ? "99+" : streamListInfoGroup.data!.docs.length.toString()),
+            backgroundColor: streamListInfoGroup.data!.docs.isEmpty ? Colors.transparent : Colors.green,
+            child: Icon(Icons.groups, color: menuIconColor),
+          );
+        }
+
+        // Mặc định: hiện mình icon
+        return Icon(Icons.groups, color: menuIconColor);
       },
     );
   }

@@ -101,21 +101,25 @@ class ChatRoom extends StatelessWidget {
         children: [
           SizedBox(
             width: 300,
-
             // Widget của item mỗi message
             child: ListTile(
-              title: Text(query['sendBy'] ?? ""), // Người gửi (Nội dung của 'sendBy' trong truy vấn)
+              title: Text(
+                query['sendBy'] ?? "",
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              // Người gửi (Nội dung của 'sendBy' trong truy vấn)
               subtitle: SizedBox(
                 // width: 200,
                 child: Text(
                   "${query['content']}", // Nội dung tin nhắn
                   softWrap: true,
                   textAlign: TextAlign.left,
+                  style: TextStyle(color: Colors.black, fontSize: 16),
                 ),
               ),
-              trailing: dateTime.minute >= 10
-                  ? Text("${dateTime.hour}:${dateTime.minute}")
-                  : Text("${dateTime.hour}:0${dateTime.minute}"), // Thời gian nhắn tin
+              trailing:
+                  dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
+              // Thời gian nhắn tin
               shape: RoundedRectangleBorder(
                 side: BorderSide(
                   color: firestoreController.firebaseAuth.currentUser?.email == query['sendBy'] ? Colors.blue : Colors.purpleAccent,

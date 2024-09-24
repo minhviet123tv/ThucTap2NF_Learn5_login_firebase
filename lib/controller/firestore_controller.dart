@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fire_base_app_chat/controller/page_state_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,6 +31,8 @@ class FirestoreController extends GetxController {
     textSearch.clear();
     FocusScope.of(context).requestFocus(FocusNode());
     update();
+
+    PageStateController.instance.loadPageState(PageState.none); // Chuyển trạng thái về none
   }
 
   //1.2 Cập nhật theo giá trị của textField -> Cập nhật hiển thị theo tình trạng của value
@@ -39,9 +43,25 @@ class FirestoreController extends GetxController {
     update();
   }
 
-  //1.3 Back cho trang Crate chat group: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
+  //1.3 Cập nhật theo giá trị của textField trang Create group chat
+  void updateFollowSearchValueCreateGroup(
+    BuildContext context,
+    String value,
+  ) {
+    if (value.isEmpty) {
+      FocusScope.of(context).requestFocus(FocusNode());
+      PageStateController.instance.loadPageState(PageState.none); // Cập nhật trạng thái sử dụng
+    }
+    update(); // Update của FirestoreController
+
+    // Cập nhật PageStateController
+    PageStateController.instance.loadPageState(PageState.search); // Cập nhật trạng thái sử dụng của PageStateController
+  }
+
+  //1.4 Back cho trang Crate chat group: Xoá kết quả tìm kiếm user và thay đổi trạng thái PageState
   void backAndClearForCreateGroupChat() {
     listUserCreateGroupChat.clear();
+    PageStateController.instance.loadPageState(PageState.none); // Xoá trạng thái
     Get.back();
   }
 
@@ -111,34 +131,33 @@ class FirestoreController extends GetxController {
   //3.1 Gửi tin nhắn: Lưu các thông tin ở nơi gần nhất có thể -> hạn chế truy vấn về sau (load sẽ lâu)
   void sendMessage(BuildContext context, TextEditingController textMessage, String chatRoomId, ScrollController scrollController,
       Map<String, dynamic> userFriend) async {
-    // Nếu có text -> Gửi tin nhắn và lưu thông tin (Không cần kiểm tra text trống để thực hiện các lệnh ở phía dưới nếu text trống)
+    // Nếu có text -> Gửi tin nhắn và lưu thông tin (Không có text -> thực hiện các lệnh ở phía dưới)
     if (textMessage.text.isNotEmpty) {
       try {
-        // Tạo cố định 1 thời gian chung, tránh sai lệch
-        DateTime timeNow = DateTime.now();
+        DateTime timeNow = DateTime.now(); // Cố định 1 thời gian chung, tránh sai lệch
 
         //I. Bên user đang login: Đặt lại (set) tất cả thông tin của cuộc chat ở bảng 'chat_room_id'
-        // (nếu chưa có đủ thông tin trước đó thì sẽ được đặt mới luôn)
+        // (nếu chưa có đủ thông tin trước đó ở CSDL thì phải xoá đi làm lại)
         await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(chatRoomId).set({
-          'friend_email': userFriend['email'], // Lưu luôn để khỏi truy vấn về sau
+          'friend_email': userFriend['email'], // Email của friend, lưu luôn để khỏi truy vấn về sau
           'friend_uid': userFriend['uid'],
           'last_time': timeNow, // Dùng để sắp xếp thứ tự chat có tin mới nhất
-          'last_content': textMessage.text, // Nội dung tin nhắn cuối -> Khi hiển thị danh sách không cần tìm lại tin nhắn cuối
+          'last_content': textMessage.text, // Nội dung tin nhắn cuối -> Khi hiển thị danh sách không cần query tin nhắn cuối
           'seen': true, // Báo rằng đã đọc tin nhắn mới nhất của cuộc chat này (chính mình gửi)
           'new_message': 0, // Tạo sẵn sẽ dùng để update sau
         });
 
         //II.1 Bên friend: Lấy số đếm tin nhắn mới của cuộc chat bên friend
-        int countNewMessage = 1; // Luôn báo có 1 tin mới khi gửi
+        int countNewMessage = 1; // Luôn báo có ít nhất 1 tin mới khi gửi
         var query = await firestore.collection('users').doc(userFriend['uid']).collection('chat_room_id').doc(chatRoomId).get();
         if (query.exists) {
-          countNewMessage = query['new_message']; // Nếu chat lần đầu chưa có thì vẫn là 1
+          countNewMessage = query['new_message']; // Nếu chat lần đầu chưa có lưu trước thì vẫn là 1
           countNewMessage++; // Tăng thêm 1 tin mới so với hiện tại
         }
 
-        //II.2 Đặt lại thông tin cuộc chat trong bảng 'chat_room_id' của friend
+        //II.2 Bên friend: Đặt lại thông tin cuộc chat trong bảng 'chat_room_id'
         await firestore.collection('users').doc(userFriend['uid']).collection('chat_room_id').doc(chatRoomId).set({
-          'friend_email': firebaseAuth.currentUser?.email, // Lưu luôn để khỏi truy vấn về sau
+          'friend_email': firebaseAuth.currentUser?.email, // là user đang login
           'friend_uid': firebaseAuth.currentUser?.uid,
           'last_time': timeNow, // Dùng để sắp xếp thứ tự danh sách cuộc chat
           'last_content': textMessage.text,
@@ -148,7 +167,7 @@ class FirestoreController extends GetxController {
 
         //III.1 Add mới tin nhắn vào danh sách 'message' của bảng 'chatroom' chung
         await firestore.collection('chatroom').doc(chatRoomId).collection('message').add({
-          "sendBy": firebaseAuth.currentUser?.email, // người gửi tin nhắn, xác định xem ai là người nhắn nội dung này
+          "sendBy": firebaseAuth.currentUser?.email, // người gửi tin nhắn (xác định xem ai là người nhắn nội dung này)
           'content': textMessage.text, // Nội dung tin nhắn
           'time': timeNow, // Nếu dùng FieldValue.serverTimestamp() là giờ theo tổng milisecond
         });
@@ -158,7 +177,6 @@ class FirestoreController extends GetxController {
           "chatroom_id": chatRoomId,
           'last_time': timeNow,
         });
-
       } catch (ex) {
         print(ex);
       }
@@ -188,6 +206,22 @@ class FirestoreController extends GetxController {
     scrollListView(scrollController);
   }
 
+  //3.4 Đánh dấu đã xem trong 'chat_group_id' của user đang login: báo đã xem, trả báo tin mới về 0
+  Future<void> seenChatGroup(String chatGroupId, ScrollController scrollController) async {
+    try {
+      // Update những dữ liệu cần thay đổi: Đã xem tin nhắn, trả số lượng tin mới về 0
+      await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_group_id').doc(chatGroupId).update({
+        "new_message": 0, // Không báo có tin nhắn mới
+        "seen": true, // Đã xem tin nhắn mới do chính mình gửi
+      });
+    } catch (ex) {
+      print(ex);
+    }
+
+    // Cuộn đến điểm cuối cho list tin nhắn (vì đang trong room nên khi có tin mới sẽ cập nhật)
+    scrollListView(scrollController);
+  }
+
   //4. Check user in create list (So sánh bằng mapEquals)
   bool checkUserInCreateGroupList(Map<String, dynamic> user) {
     bool exist = false;
@@ -206,87 +240,158 @@ class FirestoreController extends GetxController {
     update();
   }
 
-  //5.2 remove user
+  //5.2 Xoá user trong list tạm
   void removeUserFromListCreateGroupChat(Map<String, dynamic> userMap) {
-    // Xoá một đối tượng cụ thể, đối tượng map phải dùng mapEquals
+    // Xoá user trong list (bằng removeWhere, đối tượng map phải dùng mapEquals)
     listUserCreateGroupChat.removeWhere((element) => mapEquals(element, userMap));
     update();
   }
 
-  //6. Create group chat: Lưu id user vào 'chatgroup' và lưu id của chatgroup vào cho các user (khi tìm room chỉ việc lấy id)
+  //6. Create group chat: Lưu id các user vào 'chatgroup' và lưu id của chatgroup vào cho các user
   Future<void> createGroupChat(String groupName) async {
-    // Kiểm tra tên group
+    //I. Kiểm tra tên group
     if (groupName.isEmpty) {
       Get.snackbar("Notify", "Please enter Group name!", backgroundColor: Colors.grey[300]);
       return;
     }
 
-    String idChatGroupRoom = '';
+    String idChatGroupRoom = ''; // Lấy id tự động để sử dụng
+    DateTime timeNow = DateTime.now(); // Mốc thời gian chung
     try {
-      // Tạo một chatgroup với id tự động (rồi lấy id đó để tạo danh sách bên trong)
+      //II. Tạo một chatgroup với id tự động
       await firestore.collection('chatgroup').add({
-        'groupName': groupName,
-        'time': DateTime.now(),
-      }).then((value) async {
-        // Thêm cả user đang login vào trước khi tạo group chính thức
+        'group_name': groupName, // Chú ý cách đặt tên khác biệt
+        "last_content": "Welcome to group \'${groupName}\'!", // Nội dung cuối sẽ cập nhật mỗi khi có tin mới
+        'last_time': timeNow, // Thời gian của tin nhắn cuối (dùng cho quản trị admin)
+      }).then((document) async {
+        //1. Thêm user đang login vào danh sách tạo group
         listUserCreateGroupChat.add({
           'email': firebaseAuth.currentUser?.email,
           'uid': firebaseAuth.currentUser?.uid,
         });
 
-        // Thêm danh sách user đã chọn vào danh sách trên firestore, dùng uid của user đó làm id của danh sách user
-        listUserCreateGroupChat.forEach((element) async {
-          // value: Là select ngay sau khi vừa add của dữ liệu vừa mới thêm vào bảng 'chatgroup' (có value.id và dữ liệu vừa thêm)
-          value.collection('users_group').doc(element['uid']).set({
-            'email': element['email'],
-            'uid': element['uid'],
+        //2. Thêm danh sách user đã chuẩn bị xong vào danh sách trên firestore (dùng uid user làm id)
+        listUserCreateGroupChat.forEach((userCreateGroup) async {
+          // document: là tài liệu truy vấn sau khi add (cùng gốc với khi add)
+          document.collection('users_group').doc(userCreateGroup['uid']).set({
+            'email': userCreateGroup['email'],
+            'uid': userCreateGroup['uid'],
           });
         });
 
-        // Lấy về id của ChatGroupRoom vừa tạo
-        idChatGroupRoom = value.id;
+        //3. Lấy về id của ChatGroupRoom vừa tạo
+        idChatGroupRoom = document.id;
       });
 
-      // Lưu id của Chat Group vào danh sách 'chat_group_id' của các user trong Group đó (có thể tạo cột request)
-      listUserCreateGroupChat.forEach((element) async {
-        await firestore.collection('users').doc(element['uid']).collection('chat_group_id').doc(idChatGroupRoom).set({
-          'id_group': idChatGroupRoom,
-        });
+      //III. Phía các user trong danh sách: Thêm thông tin group vừa tạo vào danh sách 'chat_group_id' của mỗi user
+      listUserCreateGroupChat.forEach((userCreateGroup) async {
+        // Phân biệt user đang login đã tạo group và các user khác
+        var query = await firestore.collection('users').doc(userCreateGroup['uid']).collection('chat_group_id').doc(idChatGroupRoom);
+        if (userCreateGroup['uid'] != firebaseAuth.currentUser?.uid) {
+          query.set({
+            "last_time": timeNow, // Cũng là thời gian tin nhắn cuối nhưng dùng sắp xếp thứ tự gần nhất riêng cho mỗi user
+            "new_message": 0, // Tạo sẵn số lượng để cập nhật khi có tin nhắn mới
+            "seen": false, // báo chưa xem cuộc chat này
+          });
+        } else {
+          //IV. User đang login (đã tạo group): Thêm vào danh sách 'chat_group_id'
+          query.set({
+            "last_time": timeNow,
+            "new_message": 0,
+            "seen": true, // báo đã xem cuộc chat này
+          });
+        }
       });
 
       // Xử lý sau khi tạo xong 1 'chatgroup' mới
       listUserCreateGroupChat.clear(); // Xoá lưu list vừa thêm
       update(); // Cập nhật cho màn hình danh sách chat group
-      Get.to(() => ChatGroupRoom(
-            idChatGroupRoom: idChatGroupRoom,
-            isCreateGroup: true,
-          )); // Đến Chat Group Room
+      Get.to(() => ChatGroupRoom(idChatGroupRoom: idChatGroupRoom, isCreateGroup: true)); // Đến Chat Group Room
     } catch (ex) {
       print(ex.toString());
     }
   }
 
   //7.1 Gửi tin nhắn: Lưu vào firestore theo bảng 'chatgroup' -> id -> bảng 'message_chatgroup'
+  // (Đã kiểm tra và test phương án nhiều lần, hiện tại phương án này ổn, test nhắn 30 tin liên tục không có lỗi)
   void sendMessageChatGroup(
-      BuildContext context, TextEditingController textMessage, String idChatGroup, ScrollController scrollController) async {
+    BuildContext context,
+    TextEditingController textMessage,
+    String idChatGroup,
+    ScrollController scrollController,
+  ) async {
     // Nếu text message trống thì không làm gì và tạm dừng
     if (textMessage.text.isEmpty) {
       return;
     }
 
-    // Thêm 1 message vào bên trong danh sách message
-    if (textMessage.text.isNotEmpty) {
-      await firestore.collection('chatgroup').doc(idChatGroup).collection('message_chatgroup').add({
+    // Tạo mốc thời gian hiện tại chung, tránh sai lệch
+    DateTime timeNow = DateTime.now();
+
+    //I. Bên nhóm lưu chung 'chatgroup': Thêm 1 message vào danh sách 'message_chatgroup' và update thông tin chung
+    var queryChatGroup = await firestore.collection('chatgroup').doc(idChatGroup);
+    //1. Cập nhật thông tin của nhóm
+    queryChatGroup.update({
+      "last_content": textMessage.text, // Nội dung tin nhắn cuối để các user cùng truy vấn
+      'last_time': timeNow, // Luôn lưu thời gian của tin nhắn cuối
+    }).then((value) {
+      //2. Thêm message vào danh sách chứa tin nhắn của nhóm
+      queryChatGroup.collection('message_chatgroup').add({
         "sendBy": firebaseAuth.currentUser?.email, // người gửi tin nhắn
         'content': textMessage.text,
-        'time': DateTime.now(), // Còn FieldValue.serverTimestamp() là giờ theo tổng milisecond
-      }).then((onValue) {
-        scrollListView(scrollController); // Cuộn scroll tin nhắn
+        'time': timeNow,
       });
-    }
+      textMessage.clear(); // Clear TextField ngay sau khi dùng xong
+    });
 
-    textMessage.clear(); // clear TextField
+    //II. Clear dữ liệu | Trả về cho UI để hiển thị sử dụng trước (các phần sau sẽ vẫn load)
+    scrollListView(scrollController); // Cuộn scroll đến tin nhắn cuối (sau khi 'chatgroup' đã thêm tin mới)
     FocusScope.of(context).requestFocus(FocusNode()); // Đóng bàn phím
+
+    //III. Bên phía các users trong group: Cập nhật thông tin đến từng người tại bảng 'users/chat_group_id'
+    // (Có thể giới hạn số lượng user khi tạo group để tránh load lâu khi gửi tin nhắn nếu cần, hoặc lưu, chọn phương án khác)
+    await firestore
+        .collection('chatgroup')
+        .doc(idChatGroup)
+        .collection('users_group')
+        .where('uid', isNotEqualTo: firebaseAuth.currentUser?.uid) // (user đang login sẽ cập nhật riêng vì khác thông tin)
+        .get()
+        .then((queryListUser) async {
+      if (queryListUser.docs.isNotEmpty) {
+        //1. Lấy id của user trong 'users_group' để cập nhật cho mỗi user bên bảng 'users'
+        queryListUser.docs.forEach((userInGroup) async {
+          //a. Lưu trong bảng 'users/chat_group_id' của mỗi user
+          await firestore
+              .collection('users')
+              .doc(userInGroup.id)
+              .collection('chat_group_id')
+              .doc(idChatGroup)
+              .get()
+              .then((documentChatGroupOfUser) {
+            if (documentChatGroupOfUser.exists) {
+              //a. Đếm lại số tin nhắn mới trước khi cập nhật
+              int countNewMessage = documentChatGroupOfUser['new_message'];
+              countNewMessage++; // Tăng thêm 1 | Nếu là 0 thì tăng thành 1
+
+              //b. Cập nhật cho 'chat_group_id' của mỗi user (chính là documentGroupOfUser vừa lấy xong và cấp quyền reference)
+              documentChatGroupOfUser.reference.update({
+                "last_time": timeNow, // Thời gian tin nhắn cuối, dùng để sắp xếp danh sách chat cho mỗi user
+                "new_message": countNewMessage,
+                "seen": false,
+              });
+            }
+          });
+        });
+      }
+    });
+
+    //III. Bên user đang login: Cập nhật tin vừa gửi cho thông tin trong 'chat_group_id' (ở phía trên đã bỏ qua để xử lý tại đây)
+    await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_group_id').doc(idChatGroup).update({
+      "last_time": timeNow, // Thời gian tin nhắn cuối, dùng để sắp xếp danh sách chat cho mỗi user
+      "new_message": 0, // Không báo có tin nhắn mới
+      "seen": true, // Đã xem tin nhắn mới do chính mình gửi
+    });
+
   }
 
   //7.2 Cuộn scroll đến điểm cuối của ListView danh sách các tin nhắn sau khi gửi xong message
@@ -302,7 +407,7 @@ class FirestoreController extends GetxController {
 
   //8.1 Gửi yêu cầu kết bạn đến friend (theo uid, dùng uid làm id request)
   void sendRequestFriend(Map<String, dynamic> friend) async {
-    // Kiểm tra xem đã đang yêu cầu kết bạn chưa (1 điều kiện: Có trong danh sách 'send_request_to_friend' của user đang login)
+    // Kiểm tra xem đã đang yêu cầu kết bạn chưa (Điều kiện: Có trong danh sách 'send_request_to_friend' của user đang login)
     try {
       await firestore
           .collection('users')
@@ -365,7 +470,7 @@ class FirestoreController extends GetxController {
           .collection('request_from_friend')
           .doc(friend['uid'])
           .delete();
-      //b.2 Xoá yêu cầu kết bạn trong 'send_request_to_friend' của friend đến user đang login (đã dùng uid của user đang login làm uid)
+      //b.2 Xoá yêu cầu kết bạn trong 'send_request_to_friend' của friend đến user đang login
       await firestore
           .collection('users')
           .doc(friend['uid'])
@@ -387,7 +492,7 @@ class FirestoreController extends GetxController {
           .collection('request_from_friend')
           .doc(friend['uid'])
           .delete();
-      //b. Xoá yêu cầu kết bạn trong 'send_request_to_friend' của friend đến user đang login (đã dùng uid của user đang login làm uid)
+      //b. Xoá yêu cầu kết bạn trong 'send_request_to_friend' của friend đến user đang login
       await firestore
           .collection('users')
           .doc(friend['uid'])

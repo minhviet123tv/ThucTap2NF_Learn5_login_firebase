@@ -106,7 +106,7 @@ class _ChatFriendMainState extends State<ChatFriendMain> with TickerProviderStat
     );
   }
 
-  //I. Stream lấy Icon Friend Request
+  //I. Stream lấy số lượng friend cho Icon Friend Request
   Widget streamIconFriendRequest() {
     return StreamBuilder(
       stream: firestoreController.firestore
@@ -114,31 +114,31 @@ class _ChatFriendMainState extends State<ChatFriendMain> with TickerProviderStat
           .doc(firestoreController.firebaseAuth.currentUser?.uid)
           .collection('request_from_friend')
           .snapshots(),
-      builder: (context, snapshot) {
+      builder: (context, streamListReceiveRequest) {
         // Luôn cần xử lý các trường hợp 'hasError' và 'waiting' nếu không có thể hay xảy ra lỗi
-        if (snapshot.hasError) {
+        if (streamListReceiveRequest.hasError) {
           return const Center(child: Text("Error", style: TextStyle(fontSize: 20)));
         }
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (streamListReceiveRequest.connectionState == ConnectionState.waiting) {
           return Center(child: Icon(Icons.group_add, color: iconTabColor)); // Vẫn hiện icon khi waiting
         }
 
-        // Icon yêu cầu kết bạn gửi đến và số lượng
+        // Icon và số lượng yêu cầu kết bạn được gửi đến
         return Badge(
-          label: snapshot.data!.docs.isEmpty
+          label: streamListReceiveRequest.data!.docs.isEmpty
               ? const SizedBox()
-              : snapshot.data!.docs.length > 99
+              : streamListReceiveRequest.data!.docs.length > 99
                   ? const Text('99+')
-                  : Text('${snapshot.data!.docs.length}'), // Đặt số lượng phù hợp
-          backgroundColor: snapshot.data!.docs.isEmpty ? Colors.transparent : Colors.purpleAccent,
+                  : Text('${streamListReceiveRequest.data!.docs.length}'), // Đặt số lượng phù hợp
+          backgroundColor: streamListReceiveRequest.data!.docs.isEmpty ? Colors.transparent : Colors.lightGreen,
           child: Icon(Icons.group_add, color: iconTabColor),
         );
       },
     );
   }
 
-  //II. Stream Icon Chat List With Friend
+  //II. Stream Icon và số lượng các cuộc Chat với friend
   Widget streamIconChatListWithFriend() {
     return StreamBuilder(
       stream: firestoreController.firestore
@@ -164,7 +164,7 @@ class _ChatFriendMainState extends State<ChatFriendMain> with TickerProviderStat
               : snapshotSeen.data!.docs.length > 99
                   ? const Text('99+')
                   : Text('${snapshotSeen.data!.docs.length}'), // Đặt số lượng phù hợp
-          backgroundColor: snapshotSeen.data!.docs.isEmpty ? Colors.transparent : Colors.purpleAccent,
+          backgroundColor: snapshotSeen.data!.docs.isEmpty ? Colors.transparent : Colors.lightGreen,
           child: Icon(Icons.chat_bubble_outline, color: iconTabColor),
         );
       },

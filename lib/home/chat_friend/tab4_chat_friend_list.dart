@@ -27,7 +27,7 @@ class ChatFriendList extends StatelessWidget {
   //I.1 Chat List: hiển thị các cuộc chat theo thứ tự có tin nhắn mới nhất
   Widget chatListWithFriend() {
     return StreamBuilder(
-      //1. Lấy dữ liệu danh sách 'chat_room_id' của user đang login. Sắp xếp giảm, gần nhất sẽ ở trên
+      //1. Lấy danh sách 'chat_room_id' của current user chứa các cuộc chat và thông tin cuộc chat. Sắp xếp giảm, gần nhất sẽ ở trên
       stream: firestoreController.firestore
           .collection('users')
           .doc(firestoreController.firebaseAuth.currentUser?.uid)
@@ -77,22 +77,22 @@ class ChatFriendList extends StatelessWidget {
               streamListChatRoomId.data!.docs[index]['last_content'] ?? "",
               style: streamListChatRoomId.data?.docs[index]['seen']
                   ? const TextStyle(fontWeight: FontWeight.w400)
-                  : const TextStyle(fontWeight: FontWeight.w700, color: Colors.purpleAccent),
+                  : const TextStyle(fontWeight: FontWeight.w700, color: Colors.green),
             ),
 
             //3. Thời gian của tin nhắn cuối cùng
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Số lượng tin nhắn mới (Nếu có)
+                //a. Số lượng tin nhắn mới (Nếu có)
                 if (streamListChatRoomId.data?.docs[index]['new_message'] > 0)
                   Badge(
                     label: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
                       child: () {
-                        if (streamListChatRoomId.data?.docs[index]['new_message'] > 5) {
+                        if (streamListChatRoomId.data?.docs[index]['new_message'] > 99) {
                           return const Text(
-                            '5+',
+                            '99+',
                             style: const TextStyle(fontSize: 12, color: Colors.white),
                           );
                         } else {
@@ -103,10 +103,11 @@ class ChatFriendList extends StatelessWidget {
                         }
                       }(),
                     ),
-                    backgroundColor: Colors.purpleAccent,
+                    backgroundColor: Colors.green,
                   ),
                 const SizedBox(height: 5),
-                // Thời gian của tin nhắn cuối
+
+                //b. Thời gian của tin nhắn cuối
                 dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}")
               ],
             ),
