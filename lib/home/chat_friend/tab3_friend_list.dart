@@ -77,7 +77,7 @@ class FriendList extends StatelessWidget {
                 .collection("users")
                 .doc(firestoreController.firebaseAuth.currentUser?.uid)
                 .collection('my_friends')
-                .where('email', isGreaterThanOrEqualTo: textSearch.text)
+                .where('email', isEqualTo: textSearch.text)
                 .snapshots(),
             builder: (context, streamMyFriendList) {
               if (streamMyFriendList.hasError) {
