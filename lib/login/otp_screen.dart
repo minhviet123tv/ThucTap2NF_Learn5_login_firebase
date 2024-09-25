@@ -1,5 +1,4 @@
 import 'package:fire_base_app_chat/controller/user_controller.dart';
-import 'package:fire_base_app_chat/custom_widget/text_field_login_register.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 import 'package:get/get.dart';

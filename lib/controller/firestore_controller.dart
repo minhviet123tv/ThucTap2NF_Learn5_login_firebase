@@ -18,7 +18,7 @@ import '../home/chat_friend/chat_room.dart';
  */
 
 class FirestoreController extends GetxController {
-  static FirestoreController get instance => Get.find();
+  static FirestoreController get instance => Get.find(); // Dùng nhanh cho gọi từ bên ngoài, gọi trực tiếp đến class này
 
   //I. Dữ liệu chung
   final FirebaseFirestore firestore = FirebaseFirestore.instance; // Cloud Firestore database
