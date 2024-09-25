@@ -8,23 +8,18 @@ import 'firebase_options.dart';
 import 'home/home_main.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Đảm bảo đã khởi tạo (cho firebase va ca Bindings)
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Khởi tạo cho firebase và Bindings
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
     GetMaterialApp(
-      initialBinding: AllControllerBinding(),
+      initialBinding: AllControllerBinding(), // All binding cho GetxController
       getPages: [
         GetPage(name: '/login', page: () => LoginPage()),
         GetPage(name: '/home', page: () => HomeMain()),
       ],
-      home: SafeArea(
-        // Đặt HomePage sẽ bị lỗi Get.argument (Khi gửi nhiều argument) do Flutter sẽ tải luôn phần child
-        child: LoginPage(),
-      ),
+      home: SafeArea(child: LoginPage()), // (Cần tránh lỗi Get.argument khi chưa có dữ liệu)
       debugShowCheckedModeBanner: false,
     ),
   );

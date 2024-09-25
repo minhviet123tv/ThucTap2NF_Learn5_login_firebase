@@ -1,0 +1,22 @@
+1.Example:
+
+var first = db.collection("cities")
+        .orderBy("population")
+        .limit(25);
+
+return first.get().then(function (documentSnapshots) {
+  // Get the last visible document
+  var lastVisible = documentSnapshots.docs[documentSnapshots.docs.length-1];
+  console.log("last", lastVisible);
+
+  // Construct a new query starting at this document,
+  // get the next 25 cities.
+  var next = db.collection("cities")
+          .orderBy("population")
+          .startAfter(lastVisible)
+          .limit(25);
+});
+
+2. https://firebase.google.com/docs/firestore/query-data/query-cursors?authuser=0
+
+3. Tìm youtube

@@ -30,15 +30,16 @@ class ChatGroupRoom extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
+            // Quay luôn về '/home' nếu mới tạo xong group, nếu không sẽ bị quay lại phần chọn bạn bè
             isCreateGroup ? Get.toNamed('/home') : Get.back();
           },
           icon: const Icon(Icons.arrow_back),
         ),
-        title: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('chatgroup').doc(idChatGroupRoom).snapshots(),
-          builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-            if (snapshot.hasData) {
-              return Text(snapshot.data['groupName'], style: const TextStyle(color: Colors.white, fontSize: 20));
+        title: FutureBuilder(
+          future: firestoreController.firestore.collection('chatgroup').doc(idChatGroupRoom).get(),
+          builder: (BuildContext context, AsyncSnapshot<dynamic> futureChatGroup) {
+            if (futureChatGroup.hasData) {
+              return Text(futureChatGroup.data['group_name'], style: const TextStyle(color: Colors.white, fontSize: 20));
             } else {
               return const SizedBox();
             }
@@ -48,18 +49,16 @@ class ChatGroupRoom extends StatelessWidget {
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              //I. Danh sách các tin nhắn
-              listMessage(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            //I. Danh sách các tin nhắn
+            listMessage(),
 
-              //II. TextField gửi tin nhắn
-              textFieldMessage(context),
-            ],
-          ),
+            //II. TextField gửi tin nhắn
+            textFieldMessage(context),
+          ],
         ),
       ),
       resizeToAvoidBottomInset: true, // Đẩy bottom sheet, TextField lên khi có bàn phím
@@ -69,7 +68,7 @@ class ChatGroupRoom extends StatelessWidget {
   //I. Danh sách các tin nhắn
   Widget listMessage() {
     return StreamBuilder(
-      // Stream truy vấn danh sách 'message' trong bảng 'chatroom' theo id (hoặc tạo nếu chưa có)
+      //1.1 Stream truy vấn danh sách 'message' trong bảng 'chatroom' theo id (hoặc tạo nếu chưa có)
       stream: firestoreController.firestore
           .collection("chatgroup")
           .doc(idChatGroupRoom)
@@ -84,21 +83,24 @@ class ChatGroupRoom extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Danh sách tin nhắn
+        //1.2 Danh sách tin nhắn
         if (snapshot.hasData) {
-          return SizedBox(
-            height: MediaQuery.of(context).orientation == Orientation.portrait
-                ? MediaQuery.of(context).size.height * 0.84 // Màn hình dọc thì 84%
-                : MediaQuery.of(context).size.height * 0.66, // Màn hình ngang thì 66%
+          //1.3. Đánh dấu 'seen' cho cuộc chat khi đang xem, đang trong chat group room
+          firestoreController.seenChatGroup(idChatGroupRoom, _scrollController);
+
+          // Danh sách
+          return Expanded(
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(8),
               reverse: false,
               itemCount: snapshot.data!.docs.length,
-              // List (bởi docs) của bảng 'message_chatgroup'
               itemBuilder: (context, index) {
-                QueryDocumentSnapshot query = snapshot.data!.docs[index]; // dữ liệu của 1 tin nhắn theo thứ tự index
+                // dữ liệu của 1 tin nhắn theo thứ tự index
+                QueryDocumentSnapshot query = snapshot.data!.docs[index];
                 DateTime dateTime = query['time'].toDate(); // Lấy time theo định đạng
+
+                // Item của một message
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Column(
@@ -162,14 +164,14 @@ class ChatGroupRoom extends StatelessWidget {
   Widget textFieldMessage(BuildContext context) {
     return TextFormField(
       controller: textMessage,
-      autofocus: false,
+      autofocus: false, // Tự focus sẵn sàng gõ chữ khi mới vào
       decoration: InputDecoration(
-        filled: true, // Không trong suốt
+        filled: true,
+        // Không trong suốt
         hintText: "Message",
         enabled: true,
         suffixIcon: IconButton(
           onPressed: () {
-            // Lưu message của user đang login vào firestore
             firestoreController.sendMessageChatGroup(context, textMessage, idChatGroupRoom, _scrollController);
           },
           icon: const Icon(Icons.send, color: Colors.blue),

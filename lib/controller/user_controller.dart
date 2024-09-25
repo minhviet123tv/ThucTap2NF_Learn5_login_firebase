@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fire_base_app_chat/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http; //Nhận dữ liệu internet gói http
 
 import '../login/confirm_phone_number.dart';
 import '../login/otp_screen.dart';
@@ -356,6 +356,12 @@ class UserController extends GetxController {
   Future<void> updateMyUser(BuildContext context, String newString, LoadingPage loadingPage) async {
     loadingPageState(loadingPage); // update loading page state
 
+    // Kiểm tra dữ liệu đưa vào
+    if(newString.isEmpty){
+      Get.snackbar("Error", "Please type data!", backgroundColor: Colors.grey[300]);
+      return;
+    }
+
     // Cập nhật dữ liệu theo trạng thái
     try {
       // 1. Cập nhật displayName
@@ -364,10 +370,26 @@ class UserController extends GetxController {
         Get.snackbar("Notify", "Update displayName success!", backgroundColor: Colors.green[300]);
       }
 
-      //2. Cập nhật photoURL
+      //2. Cập nhật photoURL: Vừa có đuôi ảnh, vừa có kết nối
       else if (loadingPage == LoadingPage.changePhotoURL) {
-        await firebaseAuth.currentUser?.updatePhotoURL(newString);
-        Get.snackbar("Notify", "Update photoURL success!", backgroundColor: Colors.green[300]);
+
+        //a. Kiểm tra đuôi photo
+        if(!newString.contains(".jpg") && !newString.contains(".jpeg") && !newString.contains(".png")){
+          Get.snackbar("Error", "Photo required format: jpg, jpeg, png", backgroundColor: Colors.grey[300]);
+          return;
+        }
+
+        //b. Kiểm tra kết nối url. Lấy dữ liệu từ link bằng http.get()
+        final getData = await http.get(Uri.parse(newString));
+        // Nếu có kết nối (máy chủ trả về tín hiệu, trạng thái 200) -> có ảnh -> update ảnh cho user profile
+        if (getData.statusCode == 200) {
+          await firebaseAuth.currentUser?.updatePhotoURL(newString); // Update ảnh với URL đã xác minh
+          Get.snackbar("Notify", "Update photoURL success!", backgroundColor: Colors.green[300]);
+        } else {
+          // Thông báo nếu lỗi
+          Get.snackbar("Error", "Failed to load photos!", backgroundColor: Colors.green[300]);
+          throw Exception('Failed to load photos');
+        }
       }
 
       //3. Cập nhật password

@@ -1,22 +1,23 @@
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
-import 'package:fire_base_app_chat/home/chat_friend/chat_friend_list.dart';
-import 'package:fire_base_app_chat/home/chat_friend/send_request_to_friend.dart';
+import 'package:fire_base_app_chat/home/chat_friend/tab4_chat_friend_list.dart';
+import 'package:fire_base_app_chat/home/chat_friend/tab1_send_request_to_friend.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'friend_list.dart';
-import 'friend_request.dart';
+import 'tab3_friend_list.dart';
+import 'tab2_friend_request.dart';
 
 /*
-Home page
+Trang chứa các tab của phần chat, friend
+Chú ý: with TickerProviderStateMixin cho phần State để cài đặt cho TabController
  */
 
 class ChatFriendMain extends StatefulWidget {
   @override
-  State<ChatFriendMain> createState() => _HomeMainState();
+  State<ChatFriendMain> createState() => _ChatFriendMainState();
 }
 
-class _HomeMainState extends State<ChatFriendMain> with TickerProviderStateMixin {
+class _ChatFriendMainState extends State<ChatFriendMain> with TickerProviderStateMixin {
   //A. Dữ liệu
   late final TabController tabController; // Tab Controller
   late List<Tab> listMenuTab; // list menu của tab
@@ -29,17 +30,24 @@ class _HomeMainState extends State<ChatFriendMain> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    //1. Khai báo list menu của tab trước để lấy length
+
+    //I. Khởi tạo list tab trước để lấy số lượng
     listMenuTab = [
-      Tab(text: "Tab 1", icon: Icon(Icons.arrow_upward, color: iconTabColor)),
-      Tab(text: "Tab 2", icon: Icon(Icons.group_add, color: iconTabColor)),
-      Tab(text: "Tab 3", icon: Icon(Icons.group_rounded, color: iconTabColor)),
-      Tab(text: "Tab 4", icon: Icon(Icons.chat_bubble_outline, color: iconTabColor)),
+      //1. Tab, icon những request đã gửi đi
+      Tab(text: "Send request", icon: Icon(Icons.arrow_upward, color: iconTabColor)),
+      //2. Tab, icon friend request + số lượng những request gửi đến
+      Tab(text: "Receive request", icon: streamIconFriendRequest()), // Dùng stream để lấy số lượng request
+      //3. Tab, icon danh sách bạn bè
+      Tab(text: "My fiends", icon: Icon(Icons.group_rounded, color: iconTabColor)),
+      //4. Tab, icon danh sách các cuộc chat + báo số lượng cuộc chat chưa check (chưa 'seen')
+      Tab(text: "Chat friend list", icon: streamIconChatListWithFriend()),
     ];
-    //2. Dữ liệu controller, index khi mới mở | (with TickerProviderStateMixin cho class)
-    tabController = TabController(length: listMenuTab.length, vsync: this, initialIndex: 3);
-    index = 3;
-    //3. Widget cho TabBarView, tương ứng list menu của tab
+
+    //II. Dữ liệu controller, index khi mới mở | (with TickerProviderStateMixin cho class State)
+    tabController = TabController(length: listMenuTab.length, vsync: this, initialIndex: listMenuTab.length - 1);
+    index = listMenuTab.length - 1; // Đặt sẵn vị trí khi mới mở menu này
+
+    //III. Widget cho TabBarView, tương ứng list menu của tab
     listWidgetBody = [
       SendRequestToFriend(),
       FriendRequest(),
@@ -72,33 +80,94 @@ class _HomeMainState extends State<ChatFriendMain> with TickerProviderStateMixin
                           : "Chats",
               style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
           centerTitle: false,
-          leadingWidth: 0,
+          leadingWidth: 0, // Khoảng cách so với đầu app bar
           backgroundColor: Colors.blue,
           actions: [
             TabBar(
               controller: tabController,
+              indicatorSize: TabBarIndicatorSize.tab,
               tabs: listMenuTab,
               isScrollable: true,
               indicatorColor: Colors.white,
               labelStyle: const TextStyle(fontSize: 0),
-              // labelPadding: EdgeInsets.symmetric(horizontal: 16),
               onTap: (index) {
                 setState(() {
                   this.index = index;
-                  if(index == 2){
-                    firestoreController.listUserSearch.clear(); // Làm sạch cho list tìm kiếm
-                  }
                 });
               },
             )
           ],
         ),
-        //I. Widget body
         body: TabBarView(
           controller: tabController,
           children: listWidgetBody,
         ),
       ),
+    );
+  }
+
+  //I. Stream lấy số lượng friend cho Icon Friend Request
+  Widget streamIconFriendRequest() {
+    return StreamBuilder(
+      stream: firestoreController.firestore
+          .collection('users')
+          .doc(firestoreController.firebaseAuth.currentUser?.uid)
+          .collection('request_from_friend')
+          .snapshots(),
+      builder: (context, streamListReceiveRequest) {
+        // Luôn cần xử lý các trường hợp 'hasError' và 'waiting' nếu không có thể hay xảy ra lỗi
+        if (streamListReceiveRequest.hasError) {
+          return const Center(child: Text("Error", style: TextStyle(fontSize: 20)));
+        }
+
+        if (streamListReceiveRequest.connectionState == ConnectionState.waiting) {
+          return Center(child: Icon(Icons.group_add, color: iconTabColor)); // Vẫn hiện icon khi waiting
+        }
+
+        // Icon và số lượng yêu cầu kết bạn được gửi đến
+        return Badge(
+          label: streamListReceiveRequest.data!.docs.isEmpty
+              ? const SizedBox()
+              : streamListReceiveRequest.data!.docs.length > 99
+                  ? const Text('99+')
+                  : Text('${streamListReceiveRequest.data!.docs.length}'), // Đặt số lượng phù hợp
+          backgroundColor: streamListReceiveRequest.data!.docs.isEmpty ? Colors.transparent : Colors.lightGreen,
+          child: Icon(Icons.group_add, color: iconTabColor),
+        );
+      },
+    );
+  }
+
+  //II. Stream Icon và số lượng các cuộc Chat với friend
+  Widget streamIconChatListWithFriend() {
+    return StreamBuilder(
+      stream: firestoreController.firestore
+          .collection('users')
+          .doc(firestoreController.firebaseAuth.currentUser?.uid)
+          .collection('chat_room_id')
+          .where('seen', isEqualTo: false) // Chưa 'seen'
+          .snapshots(),
+      builder: (context, snapshotSeen) {
+        // Luôn cần xử lý các trường hợp 'hasError' và 'waiting' nếu không có thể hay xảy ra lỗi
+        if (snapshotSeen.hasError) {
+          return const Center(child: Text("Error", style: TextStyle(fontSize: 20)));
+        }
+
+        if (snapshotSeen.connectionState == ConnectionState.waiting) {
+          return Center(child: Icon(Icons.chat_bubble_outline, color: iconTabColor)); // Vẫn hiện icon đó khi waiting
+        }
+
+        // Icon các cuộc chat với bạn bè và số lượng cuộc chat có tin nhắn mới nhưng chưa xem
+        return Badge(
+          label: snapshotSeen.data!.docs.isEmpty
+              ? const SizedBox()
+              : snapshotSeen.data!.docs.length > 99
+                  ? const Text('99+')
+                  : Text('${snapshotSeen.data!.docs.length}'), // Đặt số lượng phù hợp
+          backgroundColor: snapshotSeen.data!.docs.isEmpty ? Colors.transparent : Colors.lightGreen,
+          child: Icon(Icons.chat_bubble_outline, color: iconTabColor),
+        );
+      },
     );
   }
 }

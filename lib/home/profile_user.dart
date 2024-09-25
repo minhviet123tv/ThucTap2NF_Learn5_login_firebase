@@ -43,9 +43,7 @@ class _ProfileUserState extends State<ProfileUser> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).requestFocus(FocusNode()); // Ẩn bàn phím khi click
-      },
+      onTap: () => FocusScope.of(context).requestFocus(FocusNode()), // Ẩn bàn phím khi click,
       child: Scaffold(
         appBar: AppBar(
           leading: const Icon(null),
@@ -83,7 +81,7 @@ class _ProfileUserState extends State<ProfileUser> {
     );
   }
 
-  //D.1 Info Welcome
+  //I. Info Welcome
   Widget welcomeUser() {
     return Padding(
       padding: const EdgeInsets.only(top: 15.0),
@@ -97,16 +95,14 @@ class _ProfileUserState extends State<ProfileUser> {
             decoration: BoxDecoration(color: Colors.lightGreen, borderRadius: BorderRadius.circular(1000)),
             child: Padding(
               padding: const EdgeInsets.all(3.0),
-              child: CircleAvatar(
-                backgroundImage: NetworkImage(
+              child: ClipOval(
+                child: Image.network(
                   userController.firebaseAuth.currentUser?.photoURL ??
-                      "https://raw.githubusercontent.com/minhviet123tv/file/main/lotus_4.jpg",
+                  "https://raw.githubusercontent.com/minhviet123tv/file/main/lotus_4.jpg",
+                  fit: BoxFit.cover,
                 ),
-                child: const Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SizedBox(),
-                ),
-              ),
+              )
+              ,
             ),
           ),
 
@@ -118,7 +114,6 @@ class _ProfileUserState extends State<ProfileUser> {
               children: [
                 // text email
                 SizedBox(
-                  // width: double.infinity,
                   child: Text(
                     userController.firebaseAuth.currentUser?.email ?? "email", // email tài khoản firebase
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
@@ -145,27 +140,24 @@ class _ProfileUserState extends State<ProfileUser> {
     );
   }
 
-//D.2 Form Update Profile
+  //II. Form Update Profile
   Widget formUpdateProfile() {
     return Form(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           //1. uid
-          itemProfile("UID", userController.firebaseAuth.currentUser?.uid.toString() ?? "uid", null, () {}),
+          itemProfile("UID", userController.firebaseAuth.currentUser?.uid.toString() ?? "uid", null, null),
 
           //2. Email
-          itemProfile("Email", userController.firebaseAuth.currentUser?.email ?? "", null, () {}),
+          itemProfile("Email", userController.firebaseAuth.currentUser?.email ?? "", null, null),
 
           //3. Phone number
           itemProfile("Phone Number", userController.firebaseAuth.currentUser?.phoneNumber ?? "", const Icon(Icons.change_circle), () {
-            // Mở trang xác thực số điện thoại, trạng thái thay đổi số mới
-            Get.to(() => const ConfirmPhoneNumber(
-                  loadingPage: LoadingPage.changePhoneNumber,
-                ));
+            Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.changePhoneNumber));
           }),
 
-          //4. Text password && Change password
+          //4. Text password và TextField Change password
           if (userController.loadingPage != LoadingPage.changePassword)
             itemProfile("Password", "", const Icon(Icons.change_circle), () {
               userController.loadingPageState(LoadingPage.changePassword);
@@ -223,31 +215,48 @@ class _ProfileUserState extends State<ProfileUser> {
     );
   }
 
-//D.3 Widget Item text profile của user
+  //II. Widget Item profile của user
   Widget itemProfile(String title, String subTitle, Icon? icon, VoidCallback? function) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return icon != null
+        ? Row(
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subTitle.isNotEmpty ? Text(subTitle) : const SizedBox(),
+                  ],
+                ),
               ),
-              subTitle.isNotEmpty ? Text(subTitle) : const SizedBox(),
+              IconButton(
+                onPressed: function,
+                icon: icon ?? const Text(""),
+              ),
             ],
-          ),
-        ),
-        IconButton(
-          onPressed: function,
-          icon: icon ?? const Icon(null),
-        ),
-      ],
-    );
+          )
+        : Padding(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subTitle.isNotEmpty ? Text(subTitle) : const SizedBox(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
   }
 
-//D.4 Button Logout
+  //III. Button Logout
   Widget buttonLogout() {
     return Center(
       child: ElevatedButton(
