@@ -45,6 +45,9 @@ dependencies:
   cloud_firestore: ^5.2.1 # Firebase FireStore (Clound)
   http: ^0.13.4
 
+  firebase_storage: ^12.3.2
+  image_picker: any
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
