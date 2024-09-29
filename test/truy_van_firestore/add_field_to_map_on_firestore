@@ -1,0 +1,21 @@
+//***I. Thêm dữ liệu (tham số, trường dữ liệu, hàng dữ liệu) mới cho một document trên firestore
+// Mấu chốt: Thêm cài đặt vào sau khi điền giá trị mới: set({newKey: newValue}, SetOptions(merge: true)),
+// set(): Là chức năng tạo mới khi chưa có, đặt lại nếu đã có -> Luôn tạo mới hoặc đặt lại toàn bộ giá trị
+// Nhưng khi có SetOptions(merge: true) thì trở thành chỉ thêm trường dữ liệu mới
+
+VD:
+FirebaseFirestore.instance.collection('users').doc('00gh56c2sjXYmXnwFoQ1752CQ7B2').set(
+    {'new_key': 'new_value'},
+    SetOptions(merge: true),
+);
+
+// *** Chú ý: Sau khi đã add thêm trường dữ liệu mới, nếu muốn sửa thì phải update (hoặc set)
+
+
+//**II. Thêm bộ sưu tập mới (collection): Điền thẳng như bình thường (nhưng phải add luôn ngay giá trị mới)
+
+FirebaseFirestore.instance.collection('users').doc('00gh56c2sjXYmXnwFoQ1752CQ7B2')
+.collection('test_collection').add({"test_key": "test_value"});
+
+//III. Lấy dữ liệu Map của một id: Kiểm tra xem có tồn tại key đó hay không
+VD: docs[index].containsKey("key_image) ?

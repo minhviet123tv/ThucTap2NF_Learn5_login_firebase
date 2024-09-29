@@ -45,8 +45,8 @@ dependencies:
   cloud_firestore: ^5.2.1 # Firebase FireStore (Clound)
   http: ^0.13.4
 
-  firebase_storage: ^12.3.2
-  image_picker: any
+  firebase_storage: ^12.3.1 # lưu file, dữ liệu media
+  image_picker: ^1.1.2 # Chọn ảnh từ máy người dùng (chú ý cài info.plist cho ios nếu dùng)
 
 dev_dependencies:
   flutter_test:
