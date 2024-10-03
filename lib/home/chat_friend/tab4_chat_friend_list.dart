@@ -65,9 +65,10 @@ class ChatFriendList extends StatelessWidget {
           color: Colors.grey[200],
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: ListTile(
+
             //1. email
             title: Text(
-              '${streamListChatRoomId.data?.docs[index]['friend_email']}', // email đã lưu trong thông tin cuộc chat
+              '${streamListChatRoomId.data?.docs[index]['friend_email'] ?? ""}', // email đã lưu trong thông tin cuộc chat
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
 

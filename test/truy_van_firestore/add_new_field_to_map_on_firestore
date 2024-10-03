@@ -1,7 +1,4 @@
-//***I. Thêm dữ liệu (tham số, trường dữ liệu, hàng dữ liệu) mới cho một document trên firestore
-// Mấu chốt: Thêm cài đặt vào sau khi điền giá trị mới: set({newKey: newValue}, SetOptions(merge: true)),
-// set(): Là chức năng tạo mới khi chưa có, đặt lại nếu đã có -> Luôn tạo mới hoặc đặt lại toàn bộ giá trị
-// Nhưng khi có SetOptions(merge: true) thì trở thành chỉ thêm trường dữ liệu mới
+//***I. Thêm trường dữ liệu mới (hoặc update nếu đã có): thêm SetOptions(merge: true) cho tính năng set dữ liệu
 
 VD:
 FirebaseFirestore.instance.collection('users').doc('00gh56c2sjXYmXnwFoQ1752CQ7B2').set(

@@ -212,6 +212,9 @@ class _UploadImagePageState extends State<UploadImagePage> {
         // Dù chọn ảnh khác để upload và thì tên đó thì vẫn không thay đổi mà chỉ thay đổi ảnh (giữ nguyên địa chỉ)
         Reference reference = FirebaseStorage.instance.ref().child("images/${imageFile!.name}"); // Đặt tên theo file thì lưu theo file
 
+        // Xoá ảnh
+        // FirebaseStorage.instance.ref().child("images/${imageFile!.name}").delete()
+
         // Có thể tạo tên bằng milisecond hoặc microsecond từ mốc đếm chung thời gian của thế giới
         // String uniqueFileName = DateTime.now().millisecondsSinceEpoch.toString();
 
