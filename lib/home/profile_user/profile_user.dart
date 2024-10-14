@@ -1,14 +1,15 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/fire_storage_controller.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
 import 'package:fire_base_app_chat/controller/user_controller.dart';
+import 'package:fire_base_app_chat/home/profile_user/view_one_image.dart';
 import 'package:fire_base_app_chat/login/confirm_phone_number.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
+
+import 'get_avatar_from_storage.dart';
 
 /*
 Control profile của user
@@ -54,12 +55,6 @@ class _ProfileUserState extends State<ProfileUser> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).requestFocus(FocusNode()), // Ẩn bàn phím khi click,
       child: Scaffold(
-        appBar: AppBar(
-          leading: const Icon(null),
-          title: const Text("My Profile", style: TextStyle(color: Colors.white, fontSize: 24)),
-          centerTitle: true,
-          backgroundColor: Colors.blue,
-        ),
         body: GetBuilder<UserController>(
           builder: (controller) {
             return Container(
@@ -80,6 +75,9 @@ class _ProfileUserState extends State<ProfileUser> {
 
                     //III. Button logout
                     buttonLogout(),
+                    const SizedBox(
+                      height: 10,
+                    ),
                   ],
                 ),
               ),
@@ -108,12 +106,12 @@ class _ProfileUserState extends State<ProfileUser> {
     );
   }
 
-  //I.2 Hiển thị avatar, click để upload thay ảnh mới
+  //I.2 Hiển thị avatar: click ảnh để xem. Chọn icon camera để upload, thay ảnh mới
   Widget imageAvatar() {
     // Dùng ElevatedButton tạo thành nút ảnh (hay ảnh dạng nút)
     return ElevatedButton(
       onPressed: () {
-        fireStorageController.selectImageAndUpload(); // Chọn và upload ảnh avatar
+        Get.to(() => ViewAvatar(uid: fireStorageController.firebaseAuth.currentUser!.uid)); // Xem ảnh avatar
       },
       style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(5)),
       child: SizedBox(
@@ -135,8 +133,8 @@ class _ProfileUserState extends State<ProfileUser> {
                       width: 100,
                       child: CircularProgressIndicator(
                         value: progressLoading, // Hình ảnh tiến độ % upload theo chỉ số
-                        color: Colors.lightGreen, // màu khi loading
-                        backgroundColor: Colors.grey[400], // Nền, màu khi đợi load
+                        color: Colors.lightGreen[400], // màu khi loading
+                        backgroundColor: Colors.grey[300], // Nền, màu khi đợi load
                         strokeWidth: 10, // chiều dày vòng loading (mở ra bên ngoài SizedBox, căn bằng 2*padding của ElevatedButton)
                       ),
                     );
@@ -146,59 +144,15 @@ class _ProfileUserState extends State<ProfileUser> {
                 },
               ),
 
-            //1*.1 Ảnh avatar trên fire storage khi mới vào trang, khi đã upload ảnh mới xong (đã xoá file ảnh chọn từ máy)
-            if (fireStorageController.imageFile == null)
+            //1*.1 Ảnh avatar khi mới vào trang, khi đã upload ảnh mới xong ( Lưu trên firestore)
+            // Phải kiểm tra currentUser.uid vì khi logOut sẽ null nhưng vẫn có hiện trang profile
+            if (fireStorageController.imageFile == null && fireStorageController.firebaseAuth.currentUser?.uid != null)
               SizedBox(
                 width: 100,
                 height: 100,
                 child: ClipOval(
-                  //1. Lấy dữ liệu document của user đang login để lấy 'avatar_url' (ở fire storage) lưu đường dẫn trong firestore
-                  child: FutureBuilder(
-                    future:
-                        firestoreController.firestore.collection('users').doc(firestoreController.firebaseAuth.currentUser?.uid).get(),
-                    builder: (context, futureCurrentUserDocument) {
-                      if (futureCurrentUserDocument.hasError) {
-                        return const Center(child: Text("hasError"));
-                      }
-                      if (futureCurrentUserDocument.connectionState == ConnectionState.waiting) {
-                        return const Center(child: SizedBox());
-                      }
-
-                      //2. Kiểm tra xem đã có trường dữ liệu 'avatar_url' chưa , nếu chưa thì thêm vào, nếu có thì hiện ảnh
-                      if (futureCurrentUserDocument.hasData) {
-                        //2.1 Nếu đã có dữ liệu 'avatar_url' -> Hiện ảnh nếu không bị trống (Đưa lên đầu để load nhanh)
-                        if (futureCurrentUserDocument.data!['avatar_url'].toString().isNotEmpty) {
-                          return Image.network(
-                            futureCurrentUserDocument.data!['avatar_url'],
-                            fit: BoxFit.cover,
-                          );
-                        }
-
-                        // Có dữ liệu nhưng chưa có key 'avatar_url' -> Thêm key, value "" (isEmpty)
-                        // Chú ý: Đây là cách thêm trường dữ liệu mới chung, sau này muốn bổ sung dữ liệu mới thì đều có thể sử dụng
-                        firestoreController.firestore
-                            .collection('users')
-                            .doc(firestoreController.firebaseAuth.currentUser?.uid)
-                            .get()
-                            .then((documentUser) async {
-                          // Thêm nếu có dữ liệu nhưng chưa có trường dữ liệu 'avatar_url' | Kiểm tra data()!.containsKey('key')
-                          if (documentUser.exists && !documentUser.data()!.containsKey('avatar_url')) {
-                            // reference: Cấp quyền quản lý dữ liệu | set: Nếu có rồi sẽ set lại, chưa có thì tạo mới toàn bộ
-                            // (Khi dùng SetOptions merge: thêm dữ liệu mới nếu chưa có, update nếu đã có, không set lại toàn bộ)
-                            await documentUser.reference.set(
-                              {'avatar_url': ""},
-                              SetOptions(merge: true),
-                            );
-
-                            //* Trả về ảnh tạm vì chưa có dữ liệu 'avatar_url'
-                            return Image.asset("assets/images/hoa_nang.jpg", fit: BoxFit.cover);
-                          }
-                        });
-                      }
-
-                      //4. Ảnh mặc định (khi không có dữ liệu, hoặc có dữ liệu nhưng ảnh trống)
-                      return Image.asset("assets/images/hoa_nang.jpg", fit: BoxFit.cover);
-                    },
+                  child: GetAvatarFromStorage(
+                    uid: fireStorageController.firebaseAuth.currentUser!.uid,
                   ),
                 ),
               ),
@@ -235,20 +189,17 @@ class _ProfileUserState extends State<ProfileUser> {
             //4. Icon nút camera
             Align(
               alignment: Alignment.bottomRight,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1),
-                    ),
-                    width: 25,
-                    height: 25,
-                  ),
-                  const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15)
-                ],
+              child: ElevatedButton(
+                onPressed: () {
+                  fireStorageController.selectImageAndUpload(); // Chọn và upload ảnh avatar
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(5),
+                  minimumSize: const Size(20, 20),
+                  // backgroundColor: Colors.black54,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Icon(Icons.camera_alt_rounded, color: Colors.black54, size: 15),
               ),
             )
           ],
@@ -265,12 +216,10 @@ class _ProfileUserState extends State<ProfileUser> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // text email
-          SizedBox(
-            child: Text(
-              userController.firebaseAuth.currentUser?.email ?? "email", // email tài khoản firebase
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              textAlign: TextAlign.left,
-            ),
+          Text(
+            userController.firebaseAuth.currentUser?.email ?? "email", // email tài khoản firebase
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            textAlign: TextAlign.left,
           ),
 
           // creationTime tài khoản firebase (Định dạng giờ UTC), có thể lấy milisecond, second, ...
@@ -299,14 +248,30 @@ class _ProfileUserState extends State<ProfileUser> {
           // itemProfile("UID", userController.firebaseAuth.currentUser?.uid.toString() ?? "uid", null, null),
 
           //2. Email
-          itemProfile("Email", userController.firebaseAuth.currentUser?.email ?? "", null, null),
+          // itemProfile("Email", userController.firebaseAuth.currentUser?.email ?? "", null, null),
 
           //3. Phone number
           itemProfile("Phone Number", userController.firebaseAuth.currentUser?.phoneNumber ?? "", const Icon(Icons.change_circle), () {
             Get.to(() => const ConfirmPhoneNumber(loadingPage: LoadingPage.changePhoneNumber));
           }),
 
-          //4. Text password và TextField Change password
+          //4. Dislay name
+          // TextFormField(
+          //   controller: textNewDisplayName, // Chỉ dùng controller hoặc initialValue
+          //   decoration: InputDecoration(
+          //     label: const Text("Name", style: TextStyle(fontSize: 16)),
+          //     hintText: "name",
+          //     suffixIcon: IconButton(
+          //       onPressed: () {
+          //         // Thay đổi DisplayName
+          //         userController.updateMyUser(context, textNewDisplayName.text, LoadingPage.changeDisplayName);
+          //       },
+          //       icon: const Icon(Icons.save),
+          //     ),
+          //   ),
+          // ),
+
+          //5. Text password và TextField Change password
           if (userController.loadingPage != LoadingPage.changePassword)
             itemProfile("Password", "", const Icon(Icons.change_circle), () {
               userController.loadingPageState(LoadingPage.changePassword);
@@ -326,22 +291,6 @@ class _ProfileUserState extends State<ProfileUser> {
                     icon: const Icon(Icons.save)),
               ),
             ),
-
-          //5. Dislay name
-          TextFormField(
-            controller: textNewDisplayName, // Chỉ dùng controller hoặc initialValue
-            decoration: InputDecoration(
-              label: const Text("Name", style: TextStyle(fontSize: 16)),
-              hintText: "name",
-              suffixIcon: IconButton(
-                onPressed: () {
-                  // Thay đổi DisplayName
-                  userController.updateMyUser(context, textNewDisplayName.text, LoadingPage.changeDisplayName);
-                },
-                icon: const Icon(Icons.save),
-              ),
-            ),
-          ),
 
           //6. Photo URL
           // TextFormField(
@@ -413,11 +362,11 @@ class _ProfileUserState extends State<ProfileUser> {
           userController.signOut(); // Sign out
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
+          backgroundColor: Colors.green,
         ),
         child: const Text(
           "Logout",
-          style: TextStyle(fontSize: 20, color: Colors.white),
+          style: TextStyle(fontSize: 18, color: Colors.white),
         ),
       ),
     );

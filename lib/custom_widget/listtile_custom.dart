@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ListTileCustom extends StatelessWidget {
+  final Widget? leading;
   final String? textTitle;
   final String? textSubTitle;
   final Widget? iconTopTrailing;
@@ -9,7 +10,7 @@ class ListTileCustom extends StatelessWidget {
   final VoidCallback? functionBottomTrailingIcon;
   final VoidCallback? onTap;
 
-  ListTileCustom({this.textTitle, this.textSubTitle, this.iconTopTrailing, this.functionTopTrailingIcon, this.iconBottomTrailing,
+  ListTileCustom({this.leading, this.textTitle, this.textSubTitle, this.iconTopTrailing, this.functionTopTrailingIcon, this.iconBottomTrailing,
       this.functionBottomTrailingIcon, this.onTap});
 
   @override
@@ -23,6 +24,7 @@ class ListTileCustom extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2),
           child: Row(
             children: [
+              if(leading != null) leading ?? const SizedBox(),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

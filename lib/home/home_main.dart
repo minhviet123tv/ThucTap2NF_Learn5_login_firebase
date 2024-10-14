@@ -1,5 +1,6 @@
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
-import 'package:fire_base_app_chat/home/profile_user.dart';
+import 'package:fire_base_app_chat/home/profile_user/main_profile_current_user.dart';
+import 'package:fire_base_app_chat/home/profile_user/profile_user.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -30,7 +31,7 @@ class _HomeMainState extends State<HomeMain> {
     SearchPageFireStore(),
     ChatFriendMain(),
     ChatGroup(),
-    ProfileUser(),
+    MainProfileCurrentUser(),
   ];
 
   //D. Trang
@@ -64,7 +65,7 @@ class _HomeMainState extends State<HomeMain> {
             //3. Chat group
             BottomNavigationBarItem(icon: streamIconChatGroup(), label: "Group"),
             //4. Profile current user
-            BottomNavigationBarItem(icon: Icon(Icons.account_circle_outlined, color: menuIconColor), label: "Account"),
+            BottomNavigationBarItem(icon: Icon(Icons.person, color: menuIconColor), label: "Account"),
           ],
         ),
       ),
@@ -136,6 +137,7 @@ class _HomeMainState extends State<HomeMain> {
             },
           );
         } else {
+
           //4.1 Khi không có số lượng yêu cầu kết bạn -> Chỉ kiểm tra số lượng tin nhắn mới (cuộc chat chưa 'seen')
           return StreamBuilder(
             stream: firestoreController.firestore

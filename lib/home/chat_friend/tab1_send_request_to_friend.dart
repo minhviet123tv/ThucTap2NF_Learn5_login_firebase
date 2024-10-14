@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
+import 'package:fire_base_app_chat/home/chat_friend/show_profile_friend.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../custom_widget/card_item_friend.dart';
+import '../profile_user/get_avatar_from_storage.dart';
 
 /*
 Danh sách friend đã được gửi yêu cầu kết bạn bởi user đang login
@@ -22,68 +26,25 @@ class SendRequestToFriend extends StatelessWidget {
             .collection('send_request_to_friend')
             .orderBy('time', descending: true)
             .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
-          if (snapshot.hasError) {
+        builder: (context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamSendRequest) {
+          if (streamSendRequest.hasError) {
             return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
           }
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (streamSendRequest.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
           // Danh sách friend đã được gửi yêu cầu kết bạn bởi user đang login
-          return snapshot.data!.docs.isNotEmpty
-              ? ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) => Card(
-                    color: Colors.grey[200],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(snapshot.data?.docs[index]['email'], style: const TextStyle(fontWeight: FontWeight.w700)),
-                                Text(snapshot.data?.docs[index]['uid']),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  firestoreController.refeshRequestSendToFriend({
-                                    'email': snapshot.data?.docs[index]['email'],
-                                    'uid': snapshot.data?.docs[index]['uid'],
-                                  });
-                                },
-                                icon: const Icon(Icons.change_circle_outlined),
-                                style: const ButtonStyle(
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  firestoreController.deleteRequestSendToFriend({
-                                    'email': snapshot.data?.docs[index]['email'],
-                                    'uid': snapshot.data?.docs[index]['uid'],
-                                  });
-                                },
-                                icon: const Icon(Icons.clear),
-                                style: const ButtonStyle(
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+          return streamSendRequest.data!.docs.isNotEmpty
+              ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1.0),
+                child: ListView.builder(
+                    itemCount: streamSendRequest.data!.docs.length,
+                    itemBuilder: (context, index){
+                      return itemSendRequest(streamSendRequest, index);
+                    },
                   ),
-                )
+              )
               : const Center(
                   child: Text(
                     "No requests have been sent yet!",
@@ -92,6 +53,36 @@ class SendRequestToFriend extends StatelessWidget {
                 );
         },
       ),
+    );
+  }
+
+  Widget itemSendRequest(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamSendRequest, int index) {
+    return CardItemFriend(
+      uidUser: streamSendRequest.data?.docs[index]['uid'],
+      onTapAvatar: (){
+        // Xem trang cá nhân friend
+        Get.to(()=> ShowProfileFriend(userFriend: {
+          'email': streamSendRequest.data?.docs[index]['email'],
+          'uid': streamSendRequest.data?.docs[index]['uid'],
+        }));
+      },
+      backGroundCard: Colors.grey[200],
+      titleWidget: Text(streamSendRequest.data?.docs[index]['email']),
+      trailingIconTop: const Icon(Icons.change_circle_outlined),
+      trailingIconBottom: const Icon(Icons.clear),
+      onTapTrailingIconTop: (){
+      firestoreController.refeshRequestSendToFriend({
+          'email': streamSendRequest.data?.docs[index]['email'],
+          'uid': streamSendRequest.data?.docs[index]['uid'],
+        });
+      },
+      onTapTrailingIconBottom: (){
+      firestoreController.deleteRequestSendToFriend({
+          'email': streamSendRequest.data?.docs[index]['email'],
+          'uid': streamSendRequest.data?.docs[index]['uid'],
+        });
+      },
+
     );
   }
 }

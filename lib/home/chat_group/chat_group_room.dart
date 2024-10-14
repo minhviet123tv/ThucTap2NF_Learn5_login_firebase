@@ -113,7 +113,11 @@ class ChatGroupRoom extends StatelessWidget {
                       SizedBox(
                         width: 300,
                         child: ListTile(
-                          title: Text(query['sendBy'] ?? ""), // Người gửi (Nội dung của 'sendBy' trong truy vấn)
+                          // Người gửi (Nội dung của 'sendBy' trong truy vấn)
+                          title: Text(
+                            query['sendBy'] ?? "",
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
                           subtitle: SizedBox(
                             // width: 200,
                             child: Text(

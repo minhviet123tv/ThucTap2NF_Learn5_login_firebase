@@ -3,6 +3,9 @@ import 'package:fire_base_app_chat/controller/firestore_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../custom_widget/card_item_friend.dart';
+import 'chat_friend/show_profile_friend.dart';
+
 /*
 Home page sử dụng FireStore
  */
@@ -11,6 +14,7 @@ class SearchPageFireStore extends StatelessWidget {
   FirestoreController firestoreController = Get.find();
 
   TextEditingController textSearch = TextEditingController();
+  Color? backgroundCard = Colors.grey[200];
 
   // Trang
   @override
@@ -20,7 +24,7 @@ class SearchPageFireStore extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           leading: const Icon(null),
-          title: const Text("Search Users", style: TextStyle(color: Colors.white, fontSize: 24)),
+          title: const Text("Search Users", style: TextStyle(color: Colors.white, fontSize: 22)),
           centerTitle: true,
           backgroundColor: Colors.blue,
         ),
@@ -124,6 +128,7 @@ class SearchPageFireStore extends StatelessWidget {
               .collection("users")
               .where('email', isNotEqualTo: firestoreController.firebaseAuth.currentUser?.email)
               .orderBy('email', descending: false)
+              // .limit(5) // Xếp sẵn hiện số lượng nhất định
               .snapshots(),
           builder: (context, streamListAllUser) {
             if (streamListAllUser.hasError) {
@@ -139,11 +144,7 @@ class SearchPageFireStore extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 itemCount: streamListAllUser.data?.docs.length, // Danh sách docs truy vấn được
                 itemBuilder: (context, index) {
-                  return Card(
-                    color: Colors.grey[200],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    child: itemFriend(streamListAllUser, index),
-                  );
+                  return itemFriend(streamListAllUser, index);
                 },
               );
             }
@@ -178,18 +179,20 @@ class SearchPageFireStore extends StatelessWidget {
 
         //1.2 Nếu có trong danh sách bạn bè (có trong bảng 'my_friends') -> Hiện item có icon bạn bè
         if (streamCheckFriend.hasData && streamCheckFriend.data!.docs.isNotEmpty) {
-          return ListTile(
-            onTap: () {
+          return CardItemFriend(
+            uidUser: streamListUser.data?.docs[index]['uid'],
+            backGroundCard: backgroundCard,
+            onTapCard: () {
               firestoreController.goToChatRoom(streamListUser, index); // vào ChatRoom cùng với user được click
             },
-            title: Text(streamListUser.data?.docs[index]['email']), // Truy vấn 'email' của user trên firestore
-            subtitle: Text(streamListUser.data?.docs[index]['uid']), // Truy vấn 'uid' của user trên firestore
-            trailing: IconButton(
-              onPressed: () {
-                firestoreController.goToChatRoom(streamListUser, index); // vào ChatRoom cùng với user được click
-              },
-              icon: const Icon(Icons.group, color: Colors.green),
-            ),
+            onTapAvatar: () {
+              Get.to(() => ShowProfileFriend(userFriend: {
+                    'email': streamListUser.data?.docs[index]['email'],
+                    'uid': streamListUser.data?.docs[index]['uid'],
+                  }));
+            },
+            titleWidget: Text(streamListUser.data?.docs[index]['email']),
+            trailingIconTop: const Icon(Icons.group, color: Colors.green),
           );
         } else {
           //2.1 Nếu chưa phải là bạn bè -> tìm quan hệ 'đã gửi yêu cầu kết bạn' đến friend này
@@ -210,18 +213,17 @@ class SearchPageFireStore extends StatelessWidget {
 
               //2.2 Nếu đúng là có quan hệ 'send_request_to_friend' -> Hiện item và icon
               if (streamSendRequest.data!.docs.isNotEmpty) {
-                return ListTile(
-                  onTap: () {
-                    // Hành động dự kiến: Chuyển đến menu Friend -> Phần send request to friend hoặc đến xem profile của bạn
+                return CardItemFriend(
+                  uidUser: streamListUser.data?.docs[index]['uid'],
+                  backGroundCard: backgroundCard,
+                  onTapAvatar: () {
+                    Get.to(() => ShowProfileFriend(userFriend: {
+                          'email': streamListUser.data?.docs[index]['email'],
+                          'uid': streamListUser.data?.docs[index]['uid'],
+                        }));
                   },
-                  title: Text(streamListUser.data?.docs[index]['email']),
-                  subtitle: Text(streamListUser.data?.docs[index]['uid']),
-                  trailing: IconButton(
-                    onPressed: () {
-                      // Chuyển đến menu Friend -> Phần send request to friend
-                    },
-                    icon: const Icon(Icons.arrow_upward, color: Colors.green),
-                  ),
+                  titleWidget: Text(streamListUser.data?.docs[index]['email']),
+                  trailingIconTop: const Icon(Icons.arrow_upward, color: Colors.green),
                 );
               } else {
                 //3.1 Tìm trong mối quan hệ 'được gửi yêu cầu kết bạn' từ người này
@@ -242,35 +244,38 @@ class SearchPageFireStore extends StatelessWidget {
 
                     //3.2 Nếu đúng là 'được gửi yêu cầu kết bạn' từ người này -> Hiện item, icon
                     if (streamReceiveRequest.data!.docs.isNotEmpty) {
-                      return ListTile(
-                          onTap: () {
-                            // firestoreController.goToChatRoom(snapshot, index); // vào ChatRoom
-                          },
-                          title: Text(streamListUser.data?.docs[index]['email']), // Truy vấn 'email' của user trên firestore
-                          subtitle: Text(streamListUser.data?.docs[index]['uid']), // Truy vấn 'uid' của user trên firestore
-                          trailing: IconButton(
-                            onPressed: () {
-                              // firestoreController.goToChatRoom(snapshot, index); // vào ChatRoom cùng với user được click
-                            },
-                            icon: const Icon(Icons.arrow_downward, color: Colors.green),
-                          ));
-                    } else {
-                      //4. Nếu không phải các trường hợp trên thì chưa có quan hệ gì -> Hiện thông tin, icon yêu cầu kết bạn
-                      return ListTile(
-                          onTap: () {
-                            // Hành động khi click item (Có thể tạo chat với người lạ)
-                          },
-                          title: Text(streamListUser.data?.docs[index]['email']),
-                          subtitle: Text(streamListUser.data?.docs[index]['uid']),
-                          trailing: IconButton(
-                            onPressed: () {
-                              firestoreController.sendRequestFriend({
+                      return CardItemFriend(
+                        uidUser: streamListUser.data?.docs[index]['uid'],
+                        backGroundCard: backgroundCard,
+                        onTapAvatar: () {
+                          Get.to(() => ShowProfileFriend(userFriend: {
                                 'email': streamListUser.data?.docs[index]['email'],
                                 'uid': streamListUser.data?.docs[index]['uid'],
-                              });
-                            },
-                            icon: const Icon(Icons.group_add),
-                          ));
+                              }));
+                        },
+                        titleWidget: Text(streamListUser.data?.docs[index]['email']),
+                        trailingIconTop: const Icon(Icons.arrow_downward, color: Colors.green),
+                      );
+                    } else {
+                      //4. Nếu không phải các trường hợp trên thì chưa có quan hệ gì -> Hiện thông tin, icon yêu cầu kết bạn
+                      return CardItemFriend(
+                        uidUser: streamListUser.data?.docs[index]['uid'],
+                        backGroundCard: backgroundCard,
+                        onTapAvatar: () {
+                          Get.to(() => ShowProfileFriend(userFriend: {
+                                'email': streamListUser.data?.docs[index]['email'],
+                                'uid': streamListUser.data?.docs[index]['uid'],
+                              }));
+                        },
+                        titleWidget: Text(streamListUser.data?.docs[index]['email']),
+                        trailingIconTop: const Icon(Icons.group_add),
+                        onTapTrailingIconTop: () {
+                          firestoreController.sendRequestFriend({
+                            'email': streamListUser.data?.docs[index]['email'],
+                            'uid': streamListUser.data?.docs[index]['uid'],
+                          });
+                        },
+                      );
                     }
                   },
                 );

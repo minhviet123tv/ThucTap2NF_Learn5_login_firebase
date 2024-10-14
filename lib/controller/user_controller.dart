@@ -240,6 +240,7 @@ class UserController extends GetxController {
 
       loadingPageState(LoadingPage.none); // update loading page state
       Get.toNamed('/login'); // Chuyển hướng đến login
+
     } catch (exception) {
       print('Sign Out Error:\n ${exception.toString()}');
     }

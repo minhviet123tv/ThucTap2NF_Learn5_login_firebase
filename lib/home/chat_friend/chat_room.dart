@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
+import 'package:fire_base_app_chat/home/chat_friend/show_profile_friend.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../profile_user/get_avatar_from_storage.dart';
 
 /*
 Chat Page
@@ -23,14 +26,32 @@ class ChatRoom extends StatelessWidget {
   Widget build(BuildContext context) {
     // Luôn cuộn đến điểm cuối của list tin nhắn khi mới mở
     WidgetsBinding.instance.addPostFrameCallback((_) => firestoreController.scrollListView(_scrollController));
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(userFriend['email'], style: const TextStyle(color: Colors.white, fontSize: 20)),
-        backgroundColor: Colors.blue,
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
-        child: Column(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Row(
+            children: [
+              InkWell(
+                onTap: ()=> Get.to(()=> ShowProfileFriend(userFriend:userFriend,)),
+                borderRadius: BorderRadius.circular(100),
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: ClipOval(child: SizedBox(width: 40, height: 40, child: GetAvatarFromStorage(uid: userFriend['uid']))),
+                )
+              ),
+              const SizedBox(width: 10),
+              Text(
+                userFriend['email'].toString().length > 23
+                    ? '${userFriend['email'].toString().substring(0, 23)}...'
+                    : userFriend['email'],
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+        ),
+        body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             //I. Danh sách các tin nhắn
@@ -40,8 +61,8 @@ class ChatRoom extends StatelessWidget {
             textFieldMessage(context),
           ],
         ),
+        resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
       ),
-      resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
     );
   }
 
@@ -93,53 +114,61 @@ class ChatRoom extends StatelessWidget {
   //I.2 Item Message
   Widget itemMessage(QueryDocumentSnapshot query) {
     DateTime dateTime = query['time'].toDate(); // Lấy time theo định đạng
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Column(
-        crossAxisAlignment:
-            firestoreController.firebaseAuth.currentUser?.email == query['sendBy'] ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-        children: [
-          SizedBox(
-            width: 300,
-            // Widget của item mỗi message
-            child: ListTile(
-              title: Text(
-                query['sendBy'] ?? "",
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              // Người gửi (Nội dung của 'sendBy' trong truy vấn)
-              subtitle: SizedBox(
-                // width: 200,
-                child: Text(
-                  "${query['content']}", // Nội dung tin nhắn
-                  softWrap: true,
-                  textAlign: TextAlign.left,
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                ),
-              ),
-              trailing:
-                  dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
-              // Thời gian nhắn tin
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  color: firestoreController.firebaseAuth.currentUser?.email == query['sendBy'] ? Colors.blue : Colors.purpleAccent,
-                ),
-                borderRadius: firestoreController.firebaseAuth.currentUser?.email == query['sendBy']
-                    ? const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                        bottomLeft: Radius.circular(20),
-                      )
-                    : const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
-                      ),
-              ),
+    return Column(
+      crossAxisAlignment:
+          firestoreController.firebaseAuth.currentUser?.email == query['sendBy'] ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+      children: [
+        Card(
+          color: firestoreController.firebaseAuth.currentUser?.email == query['sendBy'] ? Colors.grey[200] : Colors.blue[100],
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              '${query['content']}',
+              style: const TextStyle(fontSize: 16),
             ),
           ),
-        ],
-      ),
+        ),
+
+        // SizedBox(
+        //   width: 300,
+        // Widget của item mỗi message
+        // child: ListTile(
+        // title: Text(
+        //   query['sendBy'] ?? "",
+        //   style: TextStyle(fontWeight: FontWeight.w700),
+        // ),
+        // Người gửi (Nội dung của 'sendBy' trong truy vấn)
+        // subtitle: SizedBox(
+        //   // width: 200,
+        //   child: Text(
+        //     "${query['content']}", // Nội dung tin nhắn
+        //     softWrap: true,
+        //     textAlign: TextAlign.left,
+        //     style: TextStyle(color: Colors.black, fontSize: 16),
+        //   ),
+        // ),
+        // trailing:
+        //     dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
+
+        // shape: RoundedRectangleBorder(
+        //   side: BorderSide(
+        //     color: firestoreController.firebaseAuth.currentUser?.email == query['sendBy'] ? Colors.blue : Colors.purpleAccent,
+        //   ),
+        //   borderRadius: firestoreController.firebaseAuth.currentUser?.email == query['sendBy']
+        //       ? const BorderRadius.only(
+        //           topLeft: Radius.circular(20),
+        //           topRight: Radius.circular(20),
+        //           bottomLeft: Radius.circular(20),
+        //         )
+        //       : const BorderRadius.only(
+        //           topLeft: Radius.circular(20),
+        //           topRight: Radius.circular(20),
+        //           bottomRight: Radius.circular(20),
+        //         ),
+        // ),
+        // ),
+        // ),
+      ],
     );
   }
 

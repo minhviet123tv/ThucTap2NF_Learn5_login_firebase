@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
+import 'package:fire_base_app_chat/custom_widget/card_item_friend.dart';
 import 'package:fire_base_app_chat/home/chat_group/create_new_room_chat_group.dart';
 import 'package:fire_base_app_chat/home/chat_group/chat_group_room.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ class ChatGroup extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           leading: const Icon(null),
-          title: const Text("Chat Group", style: TextStyle(color: Colors.white, fontSize: 24)),
+          title: const Text("Chat Group", style: TextStyle(color: Colors.white, fontSize: 22)),
           centerTitle: true,
           actions: [
             IconButton(
@@ -99,59 +100,43 @@ class ChatGroup extends StatelessWidget {
           if (futureOneChatGroup.hasData) {
             // Lấy time cuối của 1 cuộc chat đã lưu ở mỗi user (định đạng để sử dụng)
             DateTime dateTime = streamChatGroupId.data?.docs[index]['last_time'].toDate();
-            return Card(
-              color: Colors.green[100],
-              child: ListTile(
-                //a. Tên group (ở bảng 'chatgroup' chung)
-                title: Text(
-                  "${futureOneChatGroup.data?['group_name']}", // Chú ý lấy đúng stream hay future
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-
-                //b. Nội dung tin nhắn cuối (ở bảng 'chatgroup' chung)
-                subtitle: Text(
-                  futureOneChatGroup.data?['last_content'],
-                  style: const TextStyle(color: Colors.black),
-                ),
-
-                //c. Số lượng tin mới và thời gian tin nhắn cuối của mỗi user (stream bảng 'chat_group_id' của mỗi user)
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    //a. Số lượng tin nhắn mới (Nếu có)
-                    if (streamChatGroupId.data?.docs[index]['new_message'] > 0)
-                      Badge(
-                        label: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
-                          child: () {
-                            if (streamChatGroupId.data?.docs[index]['new_message'] > 99) {
-                              return const Text(
-                                '99+',
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                              );
-                            } else {
-                              return Text(
-                                '${streamChatGroupId.data?.docs[index]['new_message']}',
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                              );
-                            }
-                          }(),
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    const SizedBox(height: 5),
-
-                    //d. Thời gian của tin nhắn cuối
-                    dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}")
-                  ],
-                ),
-
-                //3. Vào chat group khi click (với id trong danh sách 'chat_group_id' đã truy vấn)
-                onTap: () => Get.to(() => ChatGroupRoom(
+            return CardItemFriend(
+              backGroundCard: Colors.grey[100],
+              onTapCard: () {
+                // Vào chat group khi click
+                Get.to(() => ChatGroupRoom(
                       idChatGroupRoom: streamChatGroupId.data!.docs[index].id,
                       isCreateGroup: false, // Báo trạng thái sử dụng
-                    )),
+                    ));
+              },
+              titleWidget: Text(
+                "${futureOneChatGroup.data?['group_name']}", // Chú ý lấy đúng stream hay future
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
+              subTitleWidget: Text(
+                futureOneChatGroup.data?['last_content'],
+                style: const TextStyle(color: Colors.black),
+              ),
+              trailingIconTop: streamChatGroupId.data?.docs[index]['new_message'] > 0
+                  ? Badge(
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
+                        child: () {
+                          if (streamChatGroupId.data?.docs[index]['new_message'] > 99) {
+                            return const Text('99+', style: const TextStyle(fontSize: 12, color: Colors.white));
+                          } else {
+                            return Text(
+                              '${streamChatGroupId.data?.docs[index]['new_message']}',
+                              style: const TextStyle(fontSize: 12, color: Colors.white),
+                            );
+                          }
+                        }(),
+                      ),
+                      backgroundColor: Colors.green,
+                    )
+                  : const SizedBox(height: 5),
+              trailingIconBottom:
+                  dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
             );
           }
 

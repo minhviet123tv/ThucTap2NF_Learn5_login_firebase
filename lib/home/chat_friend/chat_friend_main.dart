@@ -78,7 +78,7 @@ class _ChatFriendMainState extends State<ChatFriendMain> with TickerProviderStat
                       : index == 2
                           ? "Friends"
                           : "Chats",
-              style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
           centerTitle: false,
           leadingWidth: 0, // Khoảng cách so với đầu app bar
           backgroundColor: Colors.blue,
@@ -100,6 +100,7 @@ class _ChatFriendMainState extends State<ChatFriendMain> with TickerProviderStat
         ),
         body: TabBarView(
           controller: tabController,
+          physics: const NeverScrollableScrollPhysics(), // Không swipe để chuyển tab
           children: listWidgetBody,
         ),
       ),
