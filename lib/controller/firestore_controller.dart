@@ -393,7 +393,6 @@ class FirestoreController extends GetxController {
       "new_message": 0, // Không báo có tin nhắn mới
       "seen": true, // Đã xem tin nhắn mới do chính mình gửi
     });
-
   }
 
   //7.2 Cuộn scroll đến điểm cuối của ListView danh sách các tin nhắn sau khi gửi xong message
@@ -569,10 +568,26 @@ class FirestoreController extends GetxController {
   //10. Xoá (hiển thị) trong danh sách 'chat_room_id' của mình user đang login (ở bảng 'chatroom' vẫn lưu toàn bộ cuộc chat)
   void deleteShowChatWithFriend(String friendUid) async {
     // Lấy id của chat room thông qua 2 uid
-    String idChatRoom =  getRoomIdWithFriend(firebaseAuth.currentUser!.uid, friendUid);
-    // Xoá bên user đang login
-    await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
-    // Không xoá bên friend
-    // await firestore.collection('users').doc(friendUid).collection('chat_room_id').doc(idChatRoom).delete();
+    String idChatRoom = getRoomIdWithFriend(firebaseAuth.currentUser!.uid, friendUid);
+
+    //Nếu phía bên kia đã xoá bạn bè thì sẽ xoá hoàn toàn cuộc chat cả gốc trong 'chatroom'
+    await firestore
+        .collection('users')
+        .doc(friendUid)
+        .collection('my_friends')
+        .doc(firebaseAuth.currentUser?.uid)
+        .get()
+        .then((documentCurrentUserInsideFriend) async {
+          // Nếu có trong danh sách bạn bè của bên kia -> Chỉ xoá mình hiển thị ở 'chat_room_id' của currentUser
+          if(documentCurrentUserInsideFriend.exists){
+            await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
+          } else {
+            // Nếu không có trong danh sách bạn bè của bên kia (đã xoá kết bạn) -> Xoá hết dữ liệu cuộc chat
+            await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
+            await firestore.collection('chatroom').doc(idChatRoom).delete();
+          }
+
+
+    });
   }
 }
