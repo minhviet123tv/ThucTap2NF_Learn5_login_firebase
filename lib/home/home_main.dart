@@ -3,6 +3,7 @@ import 'package:fire_base_app_chat/home/profile_user/main_profile_current_user.d
 import 'package:fire_base_app_chat/home/profile_user/profile_user.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 import 'chat_friend/chat_friend_main.dart';
 import 'chat_group/chat_group_list.dart';
@@ -33,6 +34,12 @@ class _HomeMainState extends State<HomeMain> {
     ChatGroup(),
     MainProfileCurrentUser(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdateAll(); // update app
+  }
 
   //D. Trang
   @override
@@ -209,5 +216,50 @@ class _HomeMainState extends State<HomeMain> {
         return Icon(Icons.groups, color: menuIconColor);
       },
     );
+  }
+
+  //B.2 Tổng hợp update
+  Future<void> _checkForUpdateAll() async {
+
+    late AppUpdateInfo updateInfoHere; // Thông tin về update
+    bool flexibleUpdateAvailableHere = false; // Được update linh hoạt
+
+    //1. Kiểm tra xem có update được không
+    await InAppUpdate.checkForUpdate().then((info) {
+      setState(() {
+        updateInfoHere = info;
+      });
+    }).catchError((e) {
+      print(e.toString());
+    });
+
+    //2. Thực hiện Cập nhật ngay lập tức
+    if(updateInfoHere.updateAvailability == UpdateAvailability.updateAvailable){
+      await InAppUpdate.performImmediateUpdate().catchError((e) {
+        print(e.toString());
+        return AppUpdateResult.inAppUpdateFailed;
+      });
+    }
+
+    //3. Bắt đầu cập nhật linh hoạt
+    if(updateInfoHere.updateAvailability == UpdateAvailability.updateAvailable) {
+      await InAppUpdate.startFlexibleUpdate().then((_) {
+        setState(() {
+          flexibleUpdateAvailableHere = true; // Có sẵn bản cập nhật linh hoạt
+        });
+      }).catchError((e) {
+        print(e.toString());
+      });
+    }
+
+    //4. Hoàn thành cập nhật linh hoạt
+    if(flexibleUpdateAvailableHere) {
+      await InAppUpdate.completeFlexibleUpdate().then((_) {
+        print("Update success");
+      }).catchError((e) {
+        print(e.toString());
+      });
+    }
+
   }
 }

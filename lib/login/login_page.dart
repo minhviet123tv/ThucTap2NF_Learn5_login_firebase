@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
       alignment: Alignment.center,
       width: double.infinity,
       padding: const EdgeInsets.all(10),
-      margin: const EdgeInsets.fromLTRB(20, 10, 30, 30),
+      margin: const EdgeInsets.fromLTRB(20, 10, 25, 30),
       decoration: const BoxDecoration(
         color: Colors.pink,
         shape: BoxShape.rectangle,
@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       transform: Matrix4.rotationZ(-0.11),
       child: const Text(
-        "My App Chat ",
+        "2NF Chat ",
         style: TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.w800),
       ),
     );

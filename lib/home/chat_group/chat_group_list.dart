@@ -86,63 +86,70 @@ class ChatGroup extends StatelessWidget {
   Widget itemChatGroup(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamChatGroupId, int index) {
     //1. Truy vấn FutureBuilder lên bảng chung 'chatgroup' để lấy dữ liệu của mỗi một cuộc chat
     if (streamChatGroupId.hasData && streamChatGroupId.data!.docs.isNotEmpty) {
-      return FutureBuilder(
-        future: firestoreController.firestore.collection('chatgroup').doc(streamChatGroupId.data!.docs[index].id).get(),
-        builder: (context, futureOneChatGroup) {
-          if (futureOneChatGroup.hasError) {
-            return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
-          }
-          if (futureOneChatGroup.connectionState == ConnectionState.waiting) {
+      return Padding(
+        padding: index == 0
+            ? const EdgeInsets.only(top: 5.0)
+            : index == streamChatGroupId.data!.docs.length - 1
+            ? const EdgeInsets.only(bottom: 10.0)
+            : const EdgeInsets.only(top: 0.0),
+        child: FutureBuilder(
+          future: firestoreController.firestore.collection('chatgroup').doc(streamChatGroupId.data!.docs[index].id).get(),
+          builder: (context, futureOneChatGroup) {
+            if (futureOneChatGroup.hasError) {
+              return const Center(child: Text("Somethings went wrong", style: TextStyle(fontSize: 20)));
+            }
+            if (futureOneChatGroup.connectionState == ConnectionState.waiting) {
+              return const SizedBox();
+            }
+
+            //2. Nếu có dữ liệu -> Trả về item (Luôn cần kiểm tra điều kiện để tránh lỗi)
+            if (futureOneChatGroup.hasData) {
+              // Lấy time cuối của 1 cuộc chat đã lưu ở mỗi user (định đạng để sử dụng)
+              DateTime dateTime = streamChatGroupId.data?.docs[index]['last_time'].toDate();
+              return CardItemFriend(
+                backGroundCard: Colors.grey[100],
+                onTapCard: () {
+                  // Vào chat group khi click
+                  Get.to(() => ChatGroupRoom(
+                        idChatGroupRoom: streamChatGroupId.data!.docs[index].id,
+                        isCreateGroup: false, // Báo trạng thái sử dụng
+                      ));
+                },
+                titleWidget: Text(
+                  "${futureOneChatGroup.data?['group_name']}", // Chú ý lấy đúng stream hay future
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subTitleWidget: Text(
+                  futureOneChatGroup.data?['last_content'],
+                  style: const TextStyle(color: Colors.black),
+                ),
+                trailingIconTop: streamChatGroupId.data?.docs[index]['new_message'] > 0
+                    ? Badge(
+                        label: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
+                          child: () {
+                            if (streamChatGroupId.data?.docs[index]['new_message'] > 99) {
+                              return const Text('99+', style: const TextStyle(fontSize: 12, color: Colors.white));
+                            } else {
+                              return Text(
+                                '${streamChatGroupId.data?.docs[index]['new_message']}',
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                              );
+                            }
+                          }(),
+                        ),
+                        backgroundColor: Colors.green,
+                      )
+                    : const SizedBox(height: 5),
+                trailingIconBottom:
+                    dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
+              );
+            }
+
+            //4. Trả về mặc định
             return const SizedBox();
-          }
-
-          //2. Nếu có dữ liệu -> Trả về item (Luôn cần kiểm tra điều kiện để tránh lỗi)
-          if (futureOneChatGroup.hasData) {
-            // Lấy time cuối của 1 cuộc chat đã lưu ở mỗi user (định đạng để sử dụng)
-            DateTime dateTime = streamChatGroupId.data?.docs[index]['last_time'].toDate();
-            return CardItemFriend(
-              backGroundCard: Colors.grey[100],
-              onTapCard: () {
-                // Vào chat group khi click
-                Get.to(() => ChatGroupRoom(
-                      idChatGroupRoom: streamChatGroupId.data!.docs[index].id,
-                      isCreateGroup: false, // Báo trạng thái sử dụng
-                    ));
-              },
-              titleWidget: Text(
-                "${futureOneChatGroup.data?['group_name']}", // Chú ý lấy đúng stream hay future
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              subTitleWidget: Text(
-                futureOneChatGroup.data?['last_content'],
-                style: const TextStyle(color: Colors.black),
-              ),
-              trailingIconTop: streamChatGroupId.data?.docs[index]['new_message'] > 0
-                  ? Badge(
-                      label: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
-                        child: () {
-                          if (streamChatGroupId.data?.docs[index]['new_message'] > 99) {
-                            return const Text('99+', style: const TextStyle(fontSize: 12, color: Colors.white));
-                          } else {
-                            return Text(
-                              '${streamChatGroupId.data?.docs[index]['new_message']}',
-                              style: const TextStyle(fontSize: 12, color: Colors.white),
-                            );
-                          }
-                        }(),
-                      ),
-                      backgroundColor: Colors.green,
-                    )
-                  : const SizedBox(height: 5),
-              trailingIconBottom:
-                  dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
-            );
-          }
-
-          //4. Trả về mặc định
-          return const SizedBox();
-        },
+          },
+        ),
       );
     } else {
       return const SizedBox();

@@ -37,9 +37,7 @@ class SearchPageFireStore extends StatelessWidget {
             GetBuilder<FirestoreController>(builder: (controller) => findUserResult()),
 
             //III. Danh sách User
-            GetBuilder<FirestoreController>(
-              builder: (controller) => listAllUser(),
-            ),
+            GetBuilder<FirestoreController>(builder: (controller) => listAllUser()),
           ],
         ),
         resizeToAvoidBottomInset: true, // Đẩy bottom sheet lên khi có bàn phím
@@ -162,128 +160,135 @@ class SearchPageFireStore extends StatelessWidget {
   //IV. Item friend, thể hiện mối quan hệ bạn bè bằng icon
   Widget itemFriend(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamListUser, int index) {
     //1.1 Tìm user trong stream list truyền vào xem có trong danh sách bạn bè 'my_friends' chưa (của user đang login)
-    return StreamBuilder(
-      stream: firestoreController.firestore
-          .collection('users')
-          .doc(firestoreController.firebaseAuth.currentUser?.uid)
-          .collection('my_friends')
-          .where('uid', isEqualTo: streamListUser.data!.docs[index]['uid'])
-          .snapshots(),
-      builder: (context, streamCheckFriend) {
-        if (streamCheckFriend.hasError) {
-          return const Center(child: Text("hasError: Somethings went wrong"));
-        }
-        if (streamCheckFriend.connectionState == ConnectionState.waiting) {
-          return const Center(child: SizedBox());
-        }
+    return Padding(
+      padding: index == 0
+          ? const EdgeInsets.only(top: 5.0)
+          : index == streamListUser.data!.docs.length - 1
+          ? const EdgeInsets.only(bottom: 10.0)
+          : const EdgeInsets.only(top: 0.0),
+      child: StreamBuilder(
+        stream: firestoreController.firestore
+            .collection('users')
+            .doc(firestoreController.firebaseAuth.currentUser?.uid)
+            .collection('my_friends')
+            .where('uid', isEqualTo: streamListUser.data!.docs[index]['uid'])
+            .snapshots(),
+        builder: (context, streamCheckFriend) {
+          if (streamCheckFriend.hasError) {
+            return const Center(child: Text("hasError: Somethings went wrong"));
+          }
+          if (streamCheckFriend.connectionState == ConnectionState.waiting) {
+            return const Center(child: SizedBox());
+          }
 
-        //1.2 Nếu có trong danh sách bạn bè (có trong bảng 'my_friends') -> Hiện item có icon bạn bè
-        if (streamCheckFriend.hasData && streamCheckFriend.data!.docs.isNotEmpty) {
-          return CardItemFriend(
-            uidUser: streamListUser.data?.docs[index]['uid'],
-            backGroundCard: backgroundCard,
-            onTapCard: () {
-              firestoreController.goToChatRoom(streamListUser, index); // vào ChatRoom cùng với user được click
-            },
-            onTapAvatar: () {
-              Get.to(() => ShowProfileFriend(userFriend: {
-                    'email': streamListUser.data?.docs[index]['email'],
-                    'uid': streamListUser.data?.docs[index]['uid'],
-                  }));
-            },
-            titleWidget: Text(streamListUser.data?.docs[index]['email']),
-            trailingIconTop: const Icon(Icons.group, color: Colors.green),
-          );
-        } else {
-          //2.1 Nếu chưa phải là bạn bè -> tìm quan hệ 'đã gửi yêu cầu kết bạn' đến friend này
-          return StreamBuilder(
-            stream: firestoreController.firestore
-                .collection('users')
-                .doc(firestoreController.firebaseAuth.currentUser?.uid)
-                .collection('send_request_to_friend')
-                .where('uid', isEqualTo: streamListUser.data!.docs[index]['uid'])
-                .snapshots(),
-            builder: (context, streamSendRequest) {
-              if (streamSendRequest.hasError) {
-                return const Center(child: Text("hasError: Somethings went wrong"));
-              }
-              if (streamSendRequest.connectionState == ConnectionState.waiting) {
-                return const Center(child: SizedBox());
-              }
+          //1.2 Nếu có trong danh sách bạn bè (có trong bảng 'my_friends') -> Hiện item có icon bạn bè
+          if (streamCheckFriend.hasData && streamCheckFriend.data!.docs.isNotEmpty) {
+            return CardItemFriend(
+              uidUser: streamListUser.data?.docs[index]['uid'],
+              backGroundCard: backgroundCard,
+              onTapCard: () {
+                firestoreController.goToChatRoom(streamListUser, index); // vào ChatRoom cùng với user được click
+              },
+              onTapAvatar: () {
+                Get.to(() => ShowProfileFriend(userFriend: {
+                      'email': streamListUser.data?.docs[index]['email'],
+                      'uid': streamListUser.data?.docs[index]['uid'],
+                    }));
+              },
+              titleWidget: Text(streamListUser.data?.docs[index]['email']),
+              trailingIconTop: const Icon(Icons.group, color: Colors.green),
+            );
+          } else {
+            //2.1 Nếu chưa phải là bạn bè -> tìm quan hệ 'đã gửi yêu cầu kết bạn' đến friend này
+            return StreamBuilder(
+              stream: firestoreController.firestore
+                  .collection('users')
+                  .doc(firestoreController.firebaseAuth.currentUser?.uid)
+                  .collection('send_request_to_friend')
+                  .where('uid', isEqualTo: streamListUser.data!.docs[index]['uid'])
+                  .snapshots(),
+              builder: (context, streamSendRequest) {
+                if (streamSendRequest.hasError) {
+                  return const Center(child: Text("hasError: Somethings went wrong"));
+                }
+                if (streamSendRequest.connectionState == ConnectionState.waiting) {
+                  return const Center(child: SizedBox());
+                }
 
-              //2.2 Nếu đúng là có quan hệ 'send_request_to_friend' -> Hiện item và icon
-              if (streamSendRequest.data!.docs.isNotEmpty) {
-                return CardItemFriend(
-                  uidUser: streamListUser.data?.docs[index]['uid'],
-                  backGroundCard: backgroundCard,
-                  onTapAvatar: () {
-                    Get.to(() => ShowProfileFriend(userFriend: {
-                          'email': streamListUser.data?.docs[index]['email'],
-                          'uid': streamListUser.data?.docs[index]['uid'],
-                        }));
-                  },
-                  titleWidget: Text(streamListUser.data?.docs[index]['email']),
-                  trailingIconTop: const Icon(Icons.arrow_upward, color: Colors.green),
-                );
-              } else {
-                //3.1 Tìm trong mối quan hệ 'được gửi yêu cầu kết bạn' từ người này
-                return StreamBuilder(
-                  stream: firestoreController.firestore
-                      .collection('users')
-                      .doc(firestoreController.firebaseAuth.currentUser?.uid)
-                      .collection('request_from_friend')
-                      .where('uid', isEqualTo: streamListUser.data!.docs[index]['uid'])
-                      .snapshots(),
-                  builder: (context, streamReceiveRequest) {
-                    if (streamReceiveRequest.hasError) {
-                      return const Center(child: Text("hasError: Somethings went wrong"));
-                    }
-                    if (streamReceiveRequest.connectionState == ConnectionState.waiting) {
-                      return const Center(child: SizedBox());
-                    }
-
-                    //3.2 Nếu đúng là 'được gửi yêu cầu kết bạn' từ người này -> Hiện item, icon
-                    if (streamReceiveRequest.data!.docs.isNotEmpty) {
-                      return CardItemFriend(
-                        uidUser: streamListUser.data?.docs[index]['uid'],
-                        backGroundCard: backgroundCard,
-                        onTapAvatar: () {
-                          Get.to(() => ShowProfileFriend(userFriend: {
-                                'email': streamListUser.data?.docs[index]['email'],
-                                'uid': streamListUser.data?.docs[index]['uid'],
-                              }));
-                        },
-                        titleWidget: Text(streamListUser.data?.docs[index]['email']),
-                        trailingIconTop: const Icon(Icons.arrow_downward, color: Colors.green),
-                      );
-                    } else {
-                      //4. Nếu không phải các trường hợp trên thì chưa có quan hệ gì -> Hiện thông tin, icon yêu cầu kết bạn
-                      return CardItemFriend(
-                        uidUser: streamListUser.data?.docs[index]['uid'],
-                        backGroundCard: backgroundCard,
-                        onTapAvatar: () {
-                          Get.to(() => ShowProfileFriend(userFriend: {
-                                'email': streamListUser.data?.docs[index]['email'],
-                                'uid': streamListUser.data?.docs[index]['uid'],
-                              }));
-                        },
-                        titleWidget: Text(streamListUser.data?.docs[index]['email']),
-                        trailingIconTop: const Icon(Icons.group_add),
-                        onTapTrailingIconTop: () {
-                          firestoreController.sendRequestFriend({
+                //2.2 Nếu đúng là có quan hệ 'send_request_to_friend' -> Hiện item và icon
+                if (streamSendRequest.data!.docs.isNotEmpty) {
+                  return CardItemFriend(
+                    uidUser: streamListUser.data?.docs[index]['uid'],
+                    backGroundCard: backgroundCard,
+                    onTapAvatar: () {
+                      Get.to(() => ShowProfileFriend(userFriend: {
                             'email': streamListUser.data?.docs[index]['email'],
                             'uid': streamListUser.data?.docs[index]['uid'],
-                          });
-                        },
-                      );
-                    }
-                  },
-                );
-              }
-            },
-          );
-        }
-      },
+                          }));
+                    },
+                    titleWidget: Text(streamListUser.data?.docs[index]['email']),
+                    trailingIconTop: const Icon(Icons.arrow_upward, color: Colors.green),
+                  );
+                } else {
+                  //3.1 Tìm trong mối quan hệ 'được gửi yêu cầu kết bạn' từ người này
+                  return StreamBuilder(
+                    stream: firestoreController.firestore
+                        .collection('users')
+                        .doc(firestoreController.firebaseAuth.currentUser?.uid)
+                        .collection('request_from_friend')
+                        .where('uid', isEqualTo: streamListUser.data!.docs[index]['uid'])
+                        .snapshots(),
+                    builder: (context, streamReceiveRequest) {
+                      if (streamReceiveRequest.hasError) {
+                        return const Center(child: Text("hasError: Somethings went wrong"));
+                      }
+                      if (streamReceiveRequest.connectionState == ConnectionState.waiting) {
+                        return const Center(child: SizedBox());
+                      }
+
+                      //3.2 Nếu đúng là 'được gửi yêu cầu kết bạn' từ người này -> Hiện item, icon
+                      if (streamReceiveRequest.data!.docs.isNotEmpty) {
+                        return CardItemFriend(
+                          uidUser: streamListUser.data?.docs[index]['uid'],
+                          backGroundCard: backgroundCard,
+                          onTapAvatar: () {
+                            Get.to(() => ShowProfileFriend(userFriend: {
+                                  'email': streamListUser.data?.docs[index]['email'],
+                                  'uid': streamListUser.data?.docs[index]['uid'],
+                                }));
+                          },
+                          titleWidget: Text(streamListUser.data?.docs[index]['email']),
+                          trailingIconTop: const Icon(Icons.arrow_downward, color: Colors.green),
+                        );
+                      } else {
+                        //4. Nếu không phải các trường hợp trên thì chưa có quan hệ gì -> Hiện thông tin, icon yêu cầu kết bạn
+                        return CardItemFriend(
+                          uidUser: streamListUser.data?.docs[index]['uid'],
+                          backGroundCard: backgroundCard,
+                          onTapAvatar: () {
+                            Get.to(() => ShowProfileFriend(userFriend: {
+                                  'email': streamListUser.data?.docs[index]['email'],
+                                  'uid': streamListUser.data?.docs[index]['uid'],
+                                }));
+                          },
+                          titleWidget: Text(streamListUser.data?.docs[index]['email']),
+                          trailingIconTop: const Icon(Icons.group_add),
+                          onTapTrailingIconTop: () {
+                            firestoreController.sendRequestFriend({
+                              'email': streamListUser.data?.docs[index]['email'],
+                              'uid': streamListUser.data?.docs[index]['uid'],
+                            });
+                          },
+                        );
+                      }
+                    },
+                  );
+                }
+              },
+            );
+          }
+        },
+      ),
     );
   }
 }

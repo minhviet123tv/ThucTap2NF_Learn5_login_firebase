@@ -3,8 +3,10 @@ import 'package:fire_base_app_chat/controller/firestore_controller.dart';
 import 'package:fire_base_app_chat/home/chat_friend/show_profile_friend.dart';
 import 'package:fire_base_app_chat/home/profile_user/get_avatar_from_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 
+import '../../custom_widget/card_item_friend_swipe.dart';
 import '../../custom_widget/listtile_custom.dart';
 
 /*
@@ -164,62 +166,28 @@ class FriendList extends StatelessWidget {
   itemFriend(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot, int index) {
     return Padding(
       padding: index == 0
-          ? const EdgeInsets.only(top: 8.0)
+          ? const EdgeInsets.only(top: 5.0)
           : index == snapshot.data!.docs.length - 1
-              ? const EdgeInsets.only(bottom: 12.0)
+              ? const EdgeInsets.only(bottom: 10.0)
               : const EdgeInsets.only(top: 0.0),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: InkWell(
-          onTap: () {
-            // Vào chat room khi click
-            firestoreController.goToChatRoomWithFriend({
-              'email': snapshot.data?.docs[index]['email'],
-              'uid': snapshot.data?.docs[index]['uid'],
-            });
-          },
-          customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), // Trùng BorderRadius với Card
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 3),
-            child: Row(
-              children: [
-                // Ảnh avatar
-                InkWell(
-                  onTap: () => Get.to(() => ShowProfileFriend(userFriend: {
-                        'email': snapshot.data?.docs[index]['email'],
-                        'uid': snapshot.data?.docs[index]['uid'],
-                      })),
-                  borderRadius: BorderRadius.circular(100),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: ClipOval(
-                      child: SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: GetAvatarFromStorage(uid: snapshot.data?.docs[index]['uid']),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 15),
-
-                // Email
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        snapshot.data?.docs[index]['email'],
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      // Text(snapshot.data?.docs[index]['uid']),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      child: CardItemFriendSwipe(
+        uidUser: snapshot.data?.docs[index]['uid'],
+        titleWidget: Text(snapshot.data?.docs[index]['email']),
+        onTapAvatar: (){
+          Get.to(() => ShowProfileFriend(userFriend: {
+            'email': snapshot.data?.docs[index]['email'],
+            'uid': snapshot.data?.docs[index]['uid'],
+          }));
+        },
+        onTapCard: (){
+          firestoreController.goToChatRoomWithFriend({
+            'email': snapshot.data?.docs[index]['email'],
+            'uid': snapshot.data?.docs[index]['uid'],
+          });
+        },
+        onPressedSwipe: (context){
+          firestoreController.deleteFriend(snapshot.data?.docs[index]['uid']);
+        },
       ),
     );
   }

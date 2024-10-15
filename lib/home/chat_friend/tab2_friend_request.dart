@@ -65,33 +65,40 @@ class FriendRequest extends StatelessWidget {
 
   // Item Friend Request
   Widget itemFriendRequest(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamFriendRequest, int index) {
-    return CardItemFriend(
-      uidUser: streamFriendRequest.data?.docs[index]['uid'],
-      backGroundCard: Colors.grey[200],
-      titleWidget: Text(streamFriendRequest.data?.docs[index]['email']),
-      onTapAvatar: () {
-        // Xem trang cá nhân friend
-        Get.to(()=> ShowProfileFriend(userFriend: {
-          'email': streamFriendRequest.data?.docs[index]['email'],
-          'uid': streamFriendRequest.data?.docs[index]['uid'],
-        }));
-      },
-      trailingIconTop: const Icon(Icons.add_circle_outline),
-      onTapTrailingIconTop: () {
-        // Chấp nhận kết bạn
-        firestoreController.acceptRequestFriend({
-          'email': streamFriendRequest.data?.docs[index]['email'],
-          'uid': streamFriendRequest.data?.docs[index]['uid'],
-        });
-      },
-      trailingIconBottom: const Icon(Icons.clear),
-      onTapTrailingIconBottom: () {
-        // Huỷ, từ chối kết bạn
-        firestoreController.cancelRequestFriend({
-          'email': streamFriendRequest.data?.docs[index]['email'],
-          'uid': streamFriendRequest.data?.docs[index]['uid'],
-        });
-      },
+    return Padding(
+      padding: index == 0
+          ? const EdgeInsets.only(top: 5.0)
+          : index == streamFriendRequest.data!.docs.length - 1
+          ? const EdgeInsets.only(bottom: 10.0)
+          : const EdgeInsets.only(top: 0.0),
+      child: CardItemFriend(
+        uidUser: streamFriendRequest.data?.docs[index]['uid'],
+        backGroundCard: Colors.grey[200],
+        titleWidget: Text(streamFriendRequest.data?.docs[index]['email']),
+        onTapAvatar: () {
+          // Xem trang cá nhân friend
+          Get.to(()=> ShowProfileFriend(userFriend: {
+            'email': streamFriendRequest.data?.docs[index]['email'],
+            'uid': streamFriendRequest.data?.docs[index]['uid'],
+          }));
+        },
+        trailingIconTop: const Icon(Icons.add_circle_outline),
+        onTapTrailingIconTop: () {
+          // Chấp nhận kết bạn
+          firestoreController.acceptRequestFriend({
+            'email': streamFriendRequest.data?.docs[index]['email'],
+            'uid': streamFriendRequest.data?.docs[index]['uid'],
+          });
+        },
+        trailingIconBottom: const Icon(Icons.clear),
+        onTapTrailingIconBottom: () {
+          // Huỷ, từ chối kết bạn
+          firestoreController.cancelRequestFriend({
+            'email': streamFriendRequest.data?.docs[index]['email'],
+            'uid': streamFriendRequest.data?.docs[index]['uid'],
+          });
+        },
+      ),
     );
   }
 }

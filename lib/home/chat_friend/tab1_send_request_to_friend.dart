@@ -57,32 +57,39 @@ class SendRequestToFriend extends StatelessWidget {
   }
 
   Widget itemSendRequest(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamSendRequest, int index) {
-    return CardItemFriend(
-      uidUser: streamSendRequest.data?.docs[index]['uid'],
-      onTapAvatar: (){
-        // Xem trang cá nhân friend
-        Get.to(()=> ShowProfileFriend(userFriend: {
-          'email': streamSendRequest.data?.docs[index]['email'],
-          'uid': streamSendRequest.data?.docs[index]['uid'],
-        }));
-      },
-      backGroundCard: Colors.grey[200],
-      titleWidget: Text(streamSendRequest.data?.docs[index]['email']),
-      trailingIconTop: const Icon(Icons.change_circle_outlined),
-      trailingIconBottom: const Icon(Icons.clear),
-      onTapTrailingIconTop: (){
-      firestoreController.refeshRequestSendToFriend({
-          'email': streamSendRequest.data?.docs[index]['email'],
-          'uid': streamSendRequest.data?.docs[index]['uid'],
-        });
-      },
-      onTapTrailingIconBottom: (){
-      firestoreController.deleteRequestSendToFriend({
-          'email': streamSendRequest.data?.docs[index]['email'],
-          'uid': streamSendRequest.data?.docs[index]['uid'],
-        });
-      },
+    return Padding(
+      padding: index == 0
+          ? const EdgeInsets.only(top: 5.0)
+          : index == streamSendRequest.data!.docs.length - 1
+          ? const EdgeInsets.only(bottom: 10.0)
+          : const EdgeInsets.only(top: 0.0),
+      child: CardItemFriend(
+        uidUser: streamSendRequest.data?.docs[index]['uid'],
+        onTapAvatar: (){
+          // Xem trang cá nhân friend
+          Get.to(()=> ShowProfileFriend(userFriend: {
+            'email': streamSendRequest.data?.docs[index]['email'],
+            'uid': streamSendRequest.data?.docs[index]['uid'],
+          }));
+        },
+        backGroundCard: Colors.grey[200],
+        titleWidget: Text(streamSendRequest.data?.docs[index]['email']),
+        trailingIconTop: const Icon(Icons.change_circle_outlined),
+        trailingIconBottom: const Icon(Icons.clear),
+        onTapTrailingIconTop: (){
+        firestoreController.refeshRequestSendToFriend({
+            'email': streamSendRequest.data?.docs[index]['email'],
+            'uid': streamSendRequest.data?.docs[index]['uid'],
+          });
+        },
+        onTapTrailingIconBottom: (){
+        firestoreController.deleteRequestSendToFriend({
+            'email': streamSendRequest.data?.docs[index]['email'],
+            'uid': streamSendRequest.data?.docs[index]['uid'],
+          });
+        },
 
+      ),
     );
   }
 }

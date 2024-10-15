@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_base_app_chat/controller/firestore_controller.dart';
 import 'package:fire_base_app_chat/home/chat_friend/show_profile_friend.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 
 import '../../custom_widget/card_item_friend.dart';
+import '../../custom_widget/card_item_friend_swipe.dart';
 import '../profile_user/get_avatar_from_storage.dart';
 
 /*
@@ -62,231 +64,83 @@ class ChatFriendList extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       itemCount: streamListChatRoomId.data?.docs.length,
       itemBuilder: (context, index) {
-        DateTime dateTime = streamListChatRoomId.data!.docs[index]['last_time'].toDate(); // Lấy time theo định đạng
-
         // Widget Item: Tổng hợp các dữ liệu đã lấy được vào widget item
-        return CardItemFriend(
-          uidUser: streamListChatRoomId.data?.docs[index]['friend_uid'],
-          backGroundCard: Colors.grey[200],
-          onTapCard: () {
-            firestoreController.goToChatRoomWithFriend({
-              'email': streamListChatRoomId.data?.docs[index]['friend_email'],
-              'uid': streamListChatRoomId.data?.docs[index]['friend_uid'],
-            });
-          },
-          onTapAvatar: () {
-            Get.to(()=> ShowProfileFriend(userFriend: {
+        return Padding(
+          padding: index == streamListChatRoomId.data!.docs.length - 1
+              ? const EdgeInsets.only(bottom: 10.0)
+              : const EdgeInsets.only(top: 0.0),
+
+          // Tạo swipe cho item
+          child: itemFriendChat(streamListChatRoomId, index),
+        );
+      },
+    );
+  }
+
+  itemFriendChat2(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamListChatRoomId, int index){
+
+  }
+
+  //I.3 Item Friend Chat
+  itemFriendChat(AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> streamListChatRoomId, int index) {
+    DateTime dateTime = streamListChatRoomId.data!.docs[index]['last_time'].toDate(); // Lấy time theo định đạng
+    return CardItemFriendSwipe(
+      uidUser: streamListChatRoomId.data?.docs[index]['friend_uid'],
+      backGroundCard: Colors.grey[200],
+      onTapCard: () {
+        firestoreController.goToChatRoomWithFriend({
+          'email': streamListChatRoomId.data?.docs[index]['friend_email'],
+          'uid': streamListChatRoomId.data?.docs[index]['friend_uid'],
+        });
+      },
+      onTapAvatar: () {
+        Get.to(() => ShowProfileFriend(userFriend: {
               'email': streamListChatRoomId.data?.docs[index]['friend_email'],
               'uid': streamListChatRoomId.data?.docs[index]['friend_uid'],
             }));
-          },
-          titleWidget: Text(streamListChatRoomId.data?.docs[index]['friend_email']),
-          subTitleWidget: Text(
-            streamListChatRoomId.data!.docs[index]['last_content'] ?? "",
-            style: streamListChatRoomId.data?.docs[index]['seen']
-                ? const TextStyle(fontWeight: FontWeight.w400)
-                : const TextStyle(fontWeight: FontWeight.w700, color: Colors.green),
-          ),
-
-          // Số lượng tin nhắn mới (Nếu có)
-          trailingIconTop: streamListChatRoomId.data?.docs[index]['new_message'] > 0
-              ? Badge(
-                  label: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
-                    child: () {
-                      if (streamListChatRoomId.data?.docs[index]['new_message'] > 99) {
-                        return const Text(
-                          '99+',
-                          style: const TextStyle(fontSize: 12, color: Colors.white),
-                        );
-                      } else {
-                        return Text(
-                          '${streamListChatRoomId.data?.docs[index]['new_message']}',
-                          style: const TextStyle(fontSize: 12, color: Colors.white),
-                        );
-                      }
-                    }(),
-                  ),
-                  backgroundColor: Colors.green,
-                )
-              : const SizedBox(),
-
-          // Thời gian (giờ) của tin nhắn cuối
-          trailingIconBottom: dateTime.minute >= 10
-              ? Text("${dateTime.hour}:${dateTime.minute}", style: const TextStyle(fontSize: 12))
-              : Text("${dateTime.hour}:0${dateTime.minute}", style: const TextStyle(fontSize: 12)),
-        );
-
-        // Card(
-        //   color: Colors.grey[200],
-        //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        //   child: InkWell(
-        //     onTap: () {
-        //       // Vào chat room khi click
-        //       firestoreController.goToChatRoomWithFriend({
-        //         'email': streamListChatRoomId.data?.docs[index]['friend_email'],
-        //         'uid': streamListChatRoomId.data?.docs[index]['friend_uid'],
-        //       });
-        //     },
-        //     borderRadius: BorderRadius.circular(20),
-        //     child: Padding(
-        //       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 3),
-        //       child: Row(
-        //         children: [
-        //           //1. avatar
-        //           InkWell(
-        //             onTap: () {
-        //               Get.to(() => ShowProfileFriend(userFriend: {
-        //                     'email': streamListChatRoomId.data?.docs[index]['friend_email'],
-        //                     'uid': streamListChatRoomId.data?.docs[index]['friend_uid'],
-        //                   }));
-        //             },
-        //             borderRadius: BorderRadius.circular(100),
-        //             child: Padding(
-        //               padding: const EdgeInsets.all(4.0),
-        //               child: ClipOval(
-        //                 child: SizedBox(
-        //                   width: 60,
-        //                   height: 60,
-        //                   child: GetAvatarFromStorage(uid: streamListChatRoomId.data?.docs[index]['friend_uid']),
-        //                 ),
-        //               ),
-        //             ),
-        //           ),
-        //           const SizedBox(width: 15),
-        //
-        //           //2. Email và tin nhắn cuối
-        //           Expanded(
-        //             child: Column(
-        //               crossAxisAlignment: CrossAxisAlignment.start,
-        //               children: [
-        //                 Text(streamListChatRoomId.data?.docs[index]['friend_email'],
-        //                     style: const TextStyle(fontWeight: FontWeight.w700)),
-        //                 Text(
-        //                   streamListChatRoomId.data!.docs[index]['last_content'] ?? "",
-        //                   style: streamListChatRoomId.data?.docs[index]['seen']
-        //                       ? const TextStyle(fontWeight: FontWeight.w400)
-        //                       : const TextStyle(fontWeight: FontWeight.w700, color: Colors.green),
-        //                 )
-        //               ],
-        //             ),
-        //           ),
-        //
-        //           //3. Số lượng tin nhắn mới chưa check và thời gian của tin nhắn cuối
-        //           Column(
-        //             mainAxisAlignment: MainAxisAlignment.center,
-        //             children: [
-        //               //a. Số lượng tin nhắn mới (Nếu có)
-        //               if (streamListChatRoomId.data?.docs[index]['new_message'] > 0)
-        //                 Badge(
-        //                   label: Padding(
-        //                     padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
-        //                     child: () {
-        //                       if (streamListChatRoomId.data?.docs[index]['new_message'] > 99) {
-        //                         return const Text(
-        //                           '99+',
-        //                           style: const TextStyle(fontSize: 12, color: Colors.white),
-        //                         );
-        //                       } else {
-        //                         return Text(
-        //                           '${streamListChatRoomId.data?.docs[index]['new_message']}',
-        //                           style: const TextStyle(fontSize: 12, color: Colors.white),
-        //                         );
-        //                       }
-        //                     }(),
-        //                   ),
-        //                   backgroundColor: Colors.green,
-        //                 ),
-        //               const SizedBox(height: 5),
-        //
-        //               //b. Thời gian (giờ) của tin nhắn cuối
-        //               dateTime.minute >= 10
-        //                   ? Text(
-        //                       "${dateTime.hour}:${dateTime.minute}",
-        //                       style: const TextStyle(fontSize: 12),
-        //                     )
-        //                   : Text(
-        //                       "${dateTime.hour}:0${dateTime.minute}",
-        //                       style: const TextStyle(fontSize: 12),
-        //                     ),
-        //
-        //               //c. Thời gian (ngày) của tin nhắn cuối
-        //               // Text("${dateTime.day}/${dateTime.month}/${dateTime.year}"),
-        //             ],
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //   )
-
-        // ListTile(
-        //   leading: ClipOval(
-        //     child: SizedBox(
-        //       width: 50,
-        //       height: 50,
-        //       child: GetAvatarFromStorage(uid: streamListChatRoomId.data?.docs[index]['friend_uid']),
-        //     ),
-        //   ),
-        //
-        //   //1. email
-        //   title: Text(
-        //     '${streamListChatRoomId.data?.docs[index]['friend_email'] ?? ""}', // email đã lưu trong thông tin cuộc chat
-        //     style: const TextStyle(fontWeight: FontWeight.w700),
-        //   ),
-        //
-        //   //2. Nội dung tin nhắn + Báo đã đọc tin nhắn hay chưa đọc bằng 'seen' của cuộc chat đó
-        //   subtitle: Text(
-        //     streamListChatRoomId.data!.docs[index]['last_content'] ?? "",
-        //     style: streamListChatRoomId.data?.docs[index]['seen']
-        //         ? const TextStyle(fontWeight: FontWeight.w400)
-        //         : const TextStyle(fontWeight: FontWeight.w700, color: Colors.green),
-        //   ),
-        //
-        //   //3. Thời gian của tin nhắn cuối cùng
-        //   trailing: Column(
-        //     mainAxisAlignment: MainAxisAlignment.center,
-        //     children: [
-        //       //a. Số lượng tin nhắn mới (Nếu có)
-        //       if (streamListChatRoomId.data?.docs[index]['new_message'] > 0)
-        //         Badge(
-        //           label: Padding(
-        //             padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
-        //             child: () {
-        //               if (streamListChatRoomId.data?.docs[index]['new_message'] > 99) {
-        //                 return const Text(
-        //                   '99+',
-        //                   style: const TextStyle(fontSize: 12, color: Colors.white),
-        //                 );
-        //               } else {
-        //                 return Text(
-        //                   '${streamListChatRoomId.data?.docs[index]['new_message']}',
-        //                   style: const TextStyle(fontSize: 12, color: Colors.white),
-        //                 );
-        //               }
-        //             }(),
-        //           ),
-        //           backgroundColor: Colors.green,
-        //         ),
-        //       const SizedBox(height: 5),
-        //
-        //       //b. Thời gian (giờ) của tin nhắn cuối
-        //       dateTime.minute >= 10 ? Text("${dateTime.hour}:${dateTime.minute}") : Text("${dateTime.hour}:0${dateTime.minute}"),
-        //       //c. Thời gian (ngày) của tin nhắn cuối
-        //       // Text("${dateTime.day}/${dateTime.month}/${dateTime.year}"),
-        //     ],
-        //   ),
-        //
-        //   //4. Vào chat room khi click item
-        //   onTap: () {
-        //     firestoreController.goToChatRoomWithFriend({
-        //       'email': streamListChatRoomId.data?.docs[index]['friend_email'],
-        //       'uid': streamListChatRoomId.data?.docs[index]['friend_uid'],
-        //     });
-        //   },
-        // )
-        // ,
-        // );
       },
-    );
+      titleWidget: Text(streamListChatRoomId.data?.docs[index]['friend_email']),
+      subTitleWidget: Text(
+        streamListChatRoomId.data!.docs[index]['last_content'] ?? "",
+        style: streamListChatRoomId.data?.docs[index]['seen']
+            ? const TextStyle(fontWeight: FontWeight.w400)
+            : const TextStyle(fontWeight: FontWeight.w700, color: Colors.green),
+      ),
+
+      // Số lượng tin nhắn mới (Nếu có)
+      trailingIconTop: streamListChatRoomId.data?.docs[index]['new_message'] > 0
+          ? Badge(
+              label: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 1),
+                child: () {
+                  if (streamListChatRoomId.data?.docs[index]['new_message'] > 99) {
+                    return const Text(
+                      '99+',
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                    );
+                  } else {
+                    return Text(
+                      '${streamListChatRoomId.data?.docs[index]['new_message']}',
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                    );
+                  }
+                }(),
+              ),
+              backgroundColor: Colors.green,
+            )
+          : const SizedBox(),
+
+      // Thời gian (giờ) của tin nhắn cuối
+      trailingIconBottom: dateTime.minute >= 10
+          ? Text("${dateTime.hour}:${dateTime.minute}", style: const TextStyle(fontSize: 12))
+          : Text("${dateTime.hour}:0${dateTime.minute}", style: const TextStyle(fontSize: 12)),
+      swipeLabel: "Delete",
+
+      // Sự kiện của item swipe (hiện tại chỉ tạo 1 item)
+      onPressedSwipe: (context){
+        // Xoá hiển thị trong danh sách cuộc chat
+        firestoreController.deleteShowChatWithFriend(streamListChatRoomId.data?.docs[index]['friend_uid']);
+      },
+    ) ;
   }
 }

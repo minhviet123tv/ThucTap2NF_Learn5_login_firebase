@@ -555,4 +555,24 @@ class FirestoreController extends GetxController {
       print(ex);
     }
   }
+
+  //9. Xoá bạn bè -> Xoá trong danh sách 'my_friends' của cả 2
+  // -> Xoá cuộc chat ở cả 'chat_room_id' và gốc lưu trữ trong bảng 'chatroom'
+  void deleteFriend(String friendUid) async {
+    // Xoá bên user đang login
+    await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('my_friends').doc(friendUid).delete();
+
+    // Xoá bên friend
+    await firestore.collection('users').doc(friendUid).collection('my_friends').doc(firebaseAuth.currentUser?.uid).delete();
+  }
+
+  //10. Xoá (hiển thị) trong danh sách 'chat_room_id' của mình user đang login (ở bảng 'chatroom' vẫn lưu toàn bộ cuộc chat)
+  void deleteShowChatWithFriend(String friendUid) async {
+    // Lấy id của chat room thông qua 2 uid
+    String idChatRoom =  getRoomIdWithFriend(firebaseAuth.currentUser!.uid, friendUid);
+    // Xoá bên user đang login
+    await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
+    // Không xoá bên friend
+    // await firestore.collection('users').doc(friendUid).collection('chat_room_id').doc(idChatRoom).delete();
+  }
 }
