@@ -578,16 +578,28 @@ class FirestoreController extends GetxController {
         .doc(firebaseAuth.currentUser?.uid)
         .get()
         .then((documentCurrentUserInsideFriend) async {
-          // Nếu có trong danh sách bạn bè của bên kia -> Chỉ xoá mình hiển thị ở 'chat_room_id' của currentUser
-          if(documentCurrentUserInsideFriend.exists){
-            await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
-          } else {
-            // Nếu không có trong danh sách bạn bè của bên kia (đã xoá kết bạn) -> Xoá hết dữ liệu cuộc chat
-            await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
-            await firestore.collection('chatroom').doc(idChatRoom).delete();
+      // Nếu có trong danh sách bạn bè của bên kia -> Chỉ xoá mình hiển thị ở 'chat_room_id' của currentUser
+      if (documentCurrentUserInsideFriend.exists) {
+        await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
+      } else {
+        // Không có trong danh sách bạn bè của bên kia (đã xoá kết bạn) -> Xoá hết dữ liệu cuộc chat (đúng thứ tự)
+        // Err tạm -> Nếu xoá kết bạn trước -> Xoá cả. Nếu xoá tin nhắn trước -> Bên kia vẫn còn lưu và mở được chat room
+        //1. Xoá dữ liệu 'message'
+        await firestore.collection('chatroom').doc(idChatRoom).collection('message').get().then((documentSnapshot){
+          if(documentSnapshot.docs.isNotEmpty){
+            documentSnapshot.docs.forEach((element){
+              element.reference.delete(); // Xoá từng tin message
+            });
           }
+        });
 
+        //2. Xoá thông tin trong 'chat_room_id' của currentUser
+        await firestore.collection('users').doc(firebaseAuth.currentUser?.uid).collection('chat_room_id').doc(idChatRoom).delete();
 
+        //1. Xoá dữ liệu chat gốc ở 'chatroom'
+        await firestore.collection('chatroom').doc(idChatRoom).delete();
+
+      }
     });
   }
 }
