@@ -26,6 +26,13 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+//1. Phần 1 (của build ký app để upload google play)
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.example.fire_base_app_chat"
     compileSdk = flutter.compileSdkVersion
@@ -47,11 +54,24 @@ android {
         versionName = flutterVersionName
     }
 
+    //2. Phần 2 (của build ký app để upload google play)
+    signingConfigs {
+        release {
+            keyAlias = keystoreProperties['keyAlias']
+            keyPassword = keystoreProperties['keyPassword']
+            storeFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword = keystoreProperties['storePassword']
+        }
+    }
+
+    //3. Phần 3 (của build ký app để upload google play)
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with the debug keys for now,
+            // so `flutter run --release` works.
             signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
         }
     }
 }
