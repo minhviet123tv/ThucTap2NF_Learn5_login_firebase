@@ -9,7 +9,8 @@ import 'firebase_options.dart';
 import 'home/home_main.dart';
 
 Future<void> main() async {
-  // Khởi tạo cho firebase và Bindings
+
+  // Khởi tạo cho Firebase và Bindings
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 

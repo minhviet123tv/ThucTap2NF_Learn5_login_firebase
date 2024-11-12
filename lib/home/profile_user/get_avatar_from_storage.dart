@@ -16,7 +16,7 @@ class GetAvatarFromStorage extends StatelessWidget {
     return getAvatar();
   }
 
-  // Lấy và hiện ảnh avatar (lưu file trên fire storage, link được lưu ở firestore của user)
+  //* Lấy và hiện ảnh avatar (lưu file trên fire storage, link được lưu ở firestore của user)
   getAvatar() {
     //I. Thêm key và ảnh random nếu chưa có 'avatar_url' cho currentUser
     // (Dùng và đặt lệnh trực tiếp ở FutureBuilder để đảm bảo lệnh được thực hiện trước khi load ảnh)
@@ -25,7 +25,8 @@ class GetAvatarFromStorage extends StatelessWidget {
         (documentSnapshot) async {
           if (documentSnapshot.exists) {
             if (documentSnapshot.data()!.containsKey('avatar_url') == false) {
-              // Phải ghi rõ lại câu lệnh để chắc chắn đúng địa chỉ | set() khi dùng merge -> Thêm nếu chưa có, nếu có thì set lại
+              // set() khi dùng với merge -> Thêm 'avatar_url' nếu chưa có | Nếu có rồi thì sẽ set lại
+              // Ở đây là đã kiểm tra điều kiện nên chưa có 'avatar_url' (ghi rõ lại câu lệnh từ đầu để chắc chắn đúng địa chỉ)
               fireStorageController.firestore.collection('users').doc(uid).set(
                 {'avatar_url': fireStorageController.listUrlAvatar[Random().nextInt(fireStorageController.listUrlAvatar.length)]},
                 SetOptions(merge: true),
@@ -35,12 +36,12 @@ class GetAvatarFromStorage extends StatelessWidget {
         },
       ),
       builder: (context, futureAddKey) {
-        // Future này chỉ thực hiện void, không cần trả về dữ liệu nên chỉ xử lý error và waiting
+        // Future này chỉ thực hiện void, không cần trả về dữ liệu nên chỉ xử lý error và waiting 😉
         if (futureAddKey.hasError) {
           return const Center(child: Text("Error"));
         }
         if (futureAddKey.connectionState == ConnectionState.waiting) {
-          return const SizedBox();
+          return const SizedBox(); // 💪
         }
 
         //II. Lấy và hiển thị ảnh avatar đã lưu link trong firestore (Dùng stream để hiển thị dữ liệu thực ngay khi có ảnh)
@@ -50,17 +51,16 @@ class GetAvatarFromStorage extends StatelessWidget {
             if (streamUserDocument.hasError) {
               return const Center(child: Text("Error"));
             }
-
             if (streamUserDocument.connectionState == ConnectionState.waiting) {
-              return const SizedBox();
+              return const SizedBox(); // 💪
             }
 
-            // Trả về ảnh khi có dữ liệu, có key và data (load link ảnh)
+            // Trả về ảnh khi có dữ liệu, có key và data (load ảnh từ link ảnh)
             if (streamUserDocument.hasData) {
               if (streamUserDocument.data!['avatar_url'] != null) {
                 return Image.network(streamUserDocument.data!['avatar_url'], fit: BoxFit.cover);
               } else {
-                return Image.asset("assets/images/hoa_nang.jpg", fit: BoxFit.cover);
+                return Image.asset("assets/images/hoa_nang.jpg", fit: BoxFit.cover); // ảnh mặc định ở app
               }
             }
 

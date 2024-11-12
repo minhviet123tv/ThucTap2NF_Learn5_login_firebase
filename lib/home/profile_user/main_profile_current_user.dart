@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 
 /*
 Trang chứa các tab của phần chat, friend
-Chú ý: with TickerProviderStateMixin cho phần State để cài đặt cho TabController
+Chú ý: Cần "with TickerProviderStateMixin" cho phần State của StatefulWidget để cài đặt cho TabController 🌈
  */
 
 class MainProfileCurrentUser extends StatefulWidget {
