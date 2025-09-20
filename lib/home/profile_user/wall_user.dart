@@ -20,6 +20,7 @@ Control profile của user
 class WallUser extends StatelessWidget {
   //A. Dữ liệu
   UserController userController = Get.find();
+  // static const inAppBillingChannel = MethodChannel("inAppBillingPlatform"); // Billing
 
   // GetxController
   FirestoreController firestoreController = Get.find();
@@ -51,6 +52,9 @@ class WallUser extends StatelessWidget {
                       //II. Thông tin, tin tức đăng cá nhân của currentUser
                       contentNewsFireStorage(),
                       const SizedBox(height: 10),
+
+                      //III. Nút test mua hàng
+                      // buttonShop(context),
                     ],
                   ),
                 ),
@@ -101,7 +105,8 @@ class WallUser extends StatelessWidget {
                 builder: (context, snapshotUploadImage) {
                   if (snapshotUploadImage.hasData) {
                     //I. Chỉ số loading
-                    double progressLoading = snapshotUploadImage.data!.bytesTransferred * 100 / snapshotUploadImage.data!.totalBytes;
+                    double progressLoading =
+                        snapshotUploadImage.data!.bytesTransferred * 100 / snapshotUploadImage.data!.totalBytes;
                     return SizedBox(
                       height: 100, // Bằng đường kính của ảnh
                       width: 100,
@@ -109,7 +114,8 @@ class WallUser extends StatelessWidget {
                         value: progressLoading, // Hình ảnh tiến độ % upload theo chỉ số
                         color: Colors.lightGreen[400], // màu khi loading
                         backgroundColor: Colors.grey[300], // Nền, màu khi đợi load
-                        strokeWidth: 10, // chiều dày vòng loading (mở ra bên ngoài SizedBox, căn bằng 2*padding của ElevatedButton)
+                        strokeWidth:
+                            10, // chiều dày vòng loading (mở ra bên ngoài SizedBox, căn bằng 2*padding của ElevatedButton)
                       ),
                     );
                   } else {
@@ -149,7 +155,8 @@ class WallUser extends StatelessWidget {
                 stream: fireStorageController.uploadTask?.snapshotEvents,
                 builder: (context, snapshotUploadImage) {
                   if (snapshotUploadImage.hasData) {
-                    double progressLoading = snapshotUploadImage.data!.bytesTransferred * 100 / snapshotUploadImage.data!.totalBytes;
+                    double progressLoading =
+                        snapshotUploadImage.data!.bytesTransferred * 100 / snapshotUploadImage.data!.totalBytes;
                     return Text(
                       "${progressLoading.roundToDouble()}%", // Làm tròn
                       style: const TextStyle(fontSize: 16, color: Colors.white),
@@ -203,7 +210,8 @@ class WallUser extends StatelessWidget {
   //III. Tạo key 'news_content' nếu chưa có
   contentNewsFireStorage() {
     return FutureBuilder(
-      future: fireStorageController.firestore.collection('users').doc(fireStorageController.firebaseAuth.currentUser?.uid).get().then(
+      future:
+          fireStorageController.firestore.collection('users').doc(fireStorageController.firebaseAuth.currentUser?.uid).get().then(
         (documentSnapshot) async {
           if (documentSnapshot.exists) {
             if (documentSnapshot.data()!.containsKey('news_content') == false) {
@@ -236,8 +244,10 @@ class WallUser extends StatelessWidget {
       builder: (FireStorageController controller) {
         //1. lấy dữ liệu của currentUser
         return StreamBuilder(
-          stream:
-              fireStorageController.firestore.collection('users').doc(fireStorageController.firebaseAuth.currentUser?.uid).snapshots(),
+          stream: fireStorageController.firestore
+              .collection('users')
+              .doc(fireStorageController.firebaseAuth.currentUser?.uid)
+              .snapshots(),
           builder: (context, streamNewsContent) {
             if (streamNewsContent.hasError) {
               return const Center(child: Text("Error 2"));
@@ -321,7 +331,10 @@ class WallUser extends StatelessWidget {
                                 controller.updateNewsContent(textWall.text); // Cập nhật 'news_content' và trạng thái
                               },
                               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                              child: const Text("Save", style: TextStyle(color: Colors.white),)),
+                              child: const Text(
+                                "Save",
+                                style: TextStyle(color: Colors.white),
+                              )),
                           const SizedBox(width: 10),
 
                           // Clear 'news_content'
@@ -350,6 +363,42 @@ class WallUser extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  //IV. Tạo nút test mua hàng
+  Widget buttonShop(BuildContext context) {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Clicked 1!"),
+              backgroundColor: Colors.green,
+            ));
+          },
+          child: const Text("Buy 1"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Clicked 2!"),
+              backgroundColor: Colors.green,
+            ));
+          },
+          child: const Text("Buy 2"),
+        ),
+
+        ElevatedButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Clicked 3!"),
+              backgroundColor: Colors.green,
+            ));
+          },
+          child: const Text("Buy 3"),
+        ),
+      ],
     );
   }
 }
