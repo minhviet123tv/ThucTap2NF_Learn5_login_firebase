@@ -1,5 +1,6 @@
 // Cài CLI và SDK (Có thể xem trên console google firebase)
 //
+// Run Terminal, cmd
 // 1.
 // npm install -g firebase-tools
 //
@@ -18,7 +19,7 @@
 // flutter pub add firebase_core
 // flutter pub add firebase_analytics
 //
-// 6. Main app:
+// 6. Main app (Lệnh cần có trong hàm void main của app):
 //
 // WidgetsFlutterBinding.ensureInitialized();
 //

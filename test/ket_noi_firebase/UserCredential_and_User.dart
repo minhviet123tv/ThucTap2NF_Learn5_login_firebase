@@ -1,4 +1,4 @@
-/// Cấu trúc của UserCredential:
+/// Cấu trúc của UserCredential trên firebase:
 
 // UserCredential(
 //  additionalUserInfo: AdditionalUserInfo(isNewUser: true, profile: {}, providerId: null, username: null, authorizationCode: null),
