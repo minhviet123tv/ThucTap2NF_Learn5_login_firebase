@@ -41,7 +41,7 @@ android {
         applicationId = "com.example.fire_base_app_chat"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdk = 23 // Chú ý cài đặt thay vì để mặc định (21 trở lên, có vẻ hay dùng 23)
+        minSdkVersion = flutter.minSdkVersion // Chú ý cài đặt thay vì để mặc định (21 trở lên, có vẻ hay dùng 23)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
