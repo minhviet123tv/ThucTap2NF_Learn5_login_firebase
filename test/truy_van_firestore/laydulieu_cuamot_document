@@ -1,0 +1,54 @@
+import 'package:flutter/material.dart';
+import 'package:vote_app/controllers/firestore_controller.dart';
+/*
+ - Hiển thị dữ liệu của 1 Document:
+ Giải thích: 1 bộ sưu tập collection của Firestore chứa nhiều (danh sách) document,
+ mỗi document chứa một dữ liệu dạng Map<>, trong Map<> này có thể chứa nhiều dữ liệu
+ dạng cặp key:value (hoặc Đối tượng JSON)
+ - Trong mỗi document lại có thể chứa bộ sưu tập conllection khác nữa, kéo dài mãi vô tận
+ */
+
+class Page2TrendPage extends StatelessWidget {
+  FirestoreController firestoreController = FirestoreController();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        body: getNumber(),
+      ),
+    );
+  }
+
+  Widget? getNumber() {
+    return StreamBuilder(
+      stream: firestoreController.firestore.collection("SaveNumber")
+          .doc("currentNumber")
+          .snapshots(),
+      builder: (context, streamListNumber) {
+        // 1. Xử lý trạng thái khi gặp lỗi (như không kết nối được)
+        if (streamListNumber.hasError) {
+          return Center(
+            child: Text("Somethings went wrong!", style: TextStyle(fontSize: 20),),);
+        }
+        // 2. Xử lý trạng thái đang đợi load dữ liệu
+        if (streamListNumber.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(),);
+        }
+        // 3. Xử lý trạng thái Document không tồn tại
+        if (!streamListNumber.hasData || !streamListNumber.data!.exists) {
+          return const Center(child: Text('Not found this Document.'));
+        }
+
+        // 4. Trạng thái Dữ liệu đã sẵn sàng (Data Ready)
+        // document.data() trả về Map<String, dynamic>? nên cần kiểm tra null
+        final data = streamListNumber.data!.data();
+        // Kiểm tra data không null trước khi truy cập
+        if (data == null) {
+          return const Center(child: Text('Document is empty.'));
+        }
+        // Hiển thị các trường trong 1 Document này
+        return Center(child: Text(data['number'].toString(), style: TextStyle(fontSize: 26),));
+      },);
+  }
+}
