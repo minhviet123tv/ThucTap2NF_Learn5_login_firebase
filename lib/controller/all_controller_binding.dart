@@ -13,8 +13,9 @@ class AllControllerBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<UserController>(() => UserController(), fenix: true);
-    Get.lazyPut<FirestoreController>(() => FirestoreController(), fenix: true); // Get.put(FirestoreController());
     Get.lazyPut<PageStateController>(() => PageStateController(), fenix: true);
-    Get.lazyPut<FireStorageController>(()=> FireStorageController(), fenix: true);
+    // Get.put(FirestoreController()); hoặc kiểu như bên dưới
+    Get.lazyPut<FirestoreController>(() => FirestoreController(), fenix: true);
+    Get.lazyPut<FireStorageController>(() => FireStorageController(), fenix: true);
   }
 }
